@@ -261,6 +261,22 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
    (na rozdíl od bodu 3 tady SHA „spálené" není). Teprve pokud selže
    opakovaně stejnou chybou, zkoumej `permissions: id-token: write`
    ve workflow.
+6. **Širší degradace Actions backendu — tři další přechodné vzorce**
+   (pozorováno společně 6.8.2026 odpoledne/večer, vše odeznělo samo):
+   (a) **push do main vůbec nezaloží workflow běh** — event se ztratí
+   v backlogu, žádný běh „queued" nevznikne; řešení je ruční
+   `workflow_dispatch` (přes API/MCP funguje, i když push eventy
+   nejedou). (b) **job je zrušen po ~15 minutách bez přidělení
+   runneru** — běh skončí `cancelled`, aniž by cokoliv běželo.
+   (c) **nasazení visí ve stavu `waiting`** — běh čeká na environment
+   `github-pages` desítky minut; NENÍ to protection rule repa (ověřeno
+   — environment žádná pravidla nemá), jen zahlcený deployment backend.
+   Zaseknutý `waiting` běh navíc nemusí jít zrušit (cancel API vrací
+   502) — díky `concurrency: group pages, cancel-in-progress: true`
+   ve workflow ho ale vytlačí nový dispatch, ruční cancel není potřeba.
+   Společná strategie pro všechny vzorce: nediagnostikuj nastavení
+   repa, nespouštěj smyčku commitů — nový `workflow_dispatch`, případně
+   počkat desítky minut dle bodu 4.
 
 ## Udržuj tento soubor sám — dělej to na konci každého úkolu
 
