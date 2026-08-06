@@ -171,11 +171,15 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   Kotvení: nejbližší odstavec u obrázku v ilustrované edici → fuzzy
   match (normalizace + SequenceMatcher, monotónně vpřed) na náš .txt.
   Čtečka: `paginate` si drží `parIdx`+`first`, `renderPage` vkládá
-  `figure.ill` inline PŘED kotevní odstavec a kopii do `#ill-rail`;
-  na širokém okně (≈ šířka stránky + 460 px, třída `rail-on` na
-  `#view-reader`) se zobrazí lišta vedle čtecí plochy a inline figury
-  se skryjí, jinak inline. Klik = lightbox (`#lightbox`), Escape/klik
-  zavírá. Přepínač `settings.ills` v zásuvce vzhledu. Knihy s manifestem
+  `figure.ill` inline PŘED kotevní odstavec a plní boční lišty
+  `#ill-rail` (vpravo) + `#ill-rail-left`; `railMode()` = 0/1/2 lišt
+  podle volného místa (≈ šířka stránky + 460 / + 800 px; třídy
+  `rail-on`/`rail-2` na `#view-reader`). Při lištách se inline figury
+  skryjí; víc figur na stránce se střídavě rozdělí vpravo/vlevo; když
+  stránka kotvu nemá, lišty ukážou nejbližší předchozí a následující
+  ilustraci (jen v lištách, ne v textu) — obraz tak doprovází celou
+  kapitolu. Klik = lightbox (`#lightbox`), Escape/klik zavírá.
+  Přepínač `settings.ills` v zásuvce vzhledu. Knihy s manifestem
   mají v `BUILTIN_BOOKS` příznak `ills:true` (jinak se fetch nedělá).
 - **Vykreslení:** odstavce → věty (regex s lookbehind) → slova obalená
   `span.w`; stránkuje se po ~1200 znacích. Klik na slovo otevře panel
