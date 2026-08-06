@@ -85,9 +85,10 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
 
 - Projekt = jednosouborová webová aplikace `index.html` (čtečka pro
   výuku angličtiny). Spouští se otevřením v prohlížeči; produkce je
-  GitHub Pages z `main` (https://konias12479.github.io/Petrus/ — pokud
-  nejede, uživatel musí Pages zapnout v Settings → Pages → branch
-  `main`).
+  GitHub Pages (https://konias12479.github.io/Petrus/), nasazuje ji
+  workflow `.github/workflows/pages.yml` při každém pushi do `main`.
+  Repozitář musí zůstat **veřejný** — na private repu Pages bez
+  placeného plánu nefunguje.
 - **Po každé změně ověř, že nic nespadlo** — spusť Playwright test
   headless Chromiem (`/opt/pw-browsers/chromium`) proti lokálnímu
   `python3 -m http.server`; překladová API a CDN v kontejneru nejedou,
@@ -147,8 +148,14 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
 
 ## Časté chyby z historie projektu (nedělej znovu)
 
-{Zatím prázdné — plní se průběžně. Formát: číslovaný seznam, vzorec
-**co se stalo → jaké je pravidlo do budoucna**.}
+1. **Pages vracelo 404, protože repo bylo private** (free plán Pages na
+   private repu neumí; ani workflow s `enablement: true` ho nezapne —
+   „Resource not accessible by integration") → před laděním Pages vždy
+   ověř viditelnost repa; repo musí zůstat veřejné.
+2. **Proxy v kontejneru blokuje část GitHub API** (zápisy do nastavení
+   repa, Pages endpointy) — hlásí 403 „not permitted through this
+   proxy". Takové akce musí udělat uživatel ručně v UI, nebo je řeš
+   přes GitHub Actions workflow (tam token práva má).
 
 ## Udržuj tento soubor sám — dělej to na konci každého úkolu
 
