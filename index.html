@@ -47,7 +47,7 @@ main{max-width:1000px;margin:0 auto;padding:20px 16px 80px}
 .book-wrap{display:flex;align-items:stretch;gap:6px;width:100%;justify-content:center}
 .turn{border:none;background:transparent;font-size:34px;color:var(--muted);padding:0 6px;border-radius:var(--radius)}
 .turn:hover{color:var(--accent);background:var(--hl)}
-.book-page{background:var(--page);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.12);padding:34px 40px;max-width:720px;width:100%;min-height:60vh}
+.book-page{background:var(--page);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.12);padding:34px 40px;max-width:900px;width:100%;min-height:60vh}
 @media(max-width:640px){.book-page{padding:22px 18px}.turn{display:none}}
 #page-content{font-family:Georgia,'Times New Roman',serif;font-size:19px;line-height:1.7;text-align:justify;hyphens:auto;-webkit-hyphens:auto}
 #page-content p{margin:0 0 1em}
@@ -106,6 +106,8 @@ main{max-width:1000px;margin:0 auto;padding:20px 16px 80px}
 .fontopts{display:flex;flex-direction:column;gap:6px}
 .fontopts button{text-align:left}
 .fontopts button.sel{border-color:var(--accent);background:var(--hl)}
+#btn-bold{width:100%;text-align:left}
+#btn-bold.sel{border-color:var(--accent);background:var(--hl);font-weight:700}
 input[type=range]{width:100%}
 .range-val{font-size:13px;color:var(--muted)}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#333;color:#fff;padding:10px 18px;border-radius:10px;z-index:99;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.3)}
@@ -214,8 +216,16 @@ h1.pgtitle{font-size:22px;margin:6px 0 0}
     </div>
   </div>
   <div class="set-group">
+    <label class="head">Řez písma</label>
+    <button id="btn-bold">Tučné písmo: vypnuto</button>
+  </div>
+  <div class="set-group">
     <label class="head">Velikost písma <span class="range-val" id="size-val"></span></label>
     <input type="range" id="rng-size" min="15" max="28" step="1">
+  </div>
+  <div class="set-group">
+    <label class="head">Šířka stránky <span class="range-val" id="w-val"></span></label>
+    <input type="range" id="rng-width" min="600" max="1200" step="20">
   </div>
   <div class="set-group">
     <label class="head">Řádkování <span class="range-val" id="lh-val"></span></label>
@@ -246,7 +256,7 @@ const DB={db:null,
 };
 
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
-let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7},
+let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
 function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}
 function getWords(){return JSON.parse(localStorage.getItem(WORDS_KEY)||'[]');}
@@ -606,6 +616,11 @@ function applySettings(){
  pc.style.fontFamily=settings.font;
  pc.style.fontSize=settings.size+'px';
  pc.style.lineHeight=settings.lh;
+ pc.style.fontWeight=settings.bold?'700':'';
+ document.querySelector('.book-page').style.maxWidth=settings.width+'px';
+ const bb=$('#btn-bold');bb.classList.toggle('sel',settings.bold);
+ bb.textContent=settings.bold?'Tučné písmo: zapnuto':'Tučné písmo: vypnuto';
+ $('#rng-width').value=settings.width;$('#w-val').textContent=settings.width+' px';
  $$('.swatch').forEach(s=>s.classList.toggle('sel',s.dataset.theme===settings.theme));
  $$('.fontopts button').forEach(b=>b.classList.toggle('sel',b.dataset.font===settings.font));
  $('#rng-size').value=settings.size;$('#size-val').textContent=settings.size+' px';
@@ -704,6 +719,8 @@ window.addEventListener('drop',e=>{
 $$('.swatch').forEach(s=>s.onclick=()=>{settings.theme=s.dataset.theme;saveSettings();applySettings();});
 $$('.fontopts button').forEach(b=>b.onclick=()=>{settings.font=b.dataset.font;saveSettings();applySettings();});
 $('#rng-size').oninput=e=>{settings.size=+e.target.value;saveSettings();applySettings();};
+$('#btn-bold').onclick=()=>{settings.bold=!settings.bold;saveSettings();applySettings();};
+$('#rng-width').oninput=e=>{settings.width=+e.target.value;saveSettings();applySettings();};
 $('#rng-lh').oninput=e=>{settings.lh=(+e.target.value)/10;saveSettings();applySettings();};
 
 /* ================= start ================= */
