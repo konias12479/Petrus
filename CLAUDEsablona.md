@@ -96,8 +96,9 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
 - **Edituj postupně a cíleně** — najdi přesnou kotvu (`grep -n`),
   použij cílený edit, neposkytuj celé soubory znovu.
 - **Commituj po každé uzavřené funkci**, ne po každém dílčím kroku.
-- **Každou dokončenou a ověřenou změnu vždy doveď až do `main`**
-  (push větve → PR → merge, bez čekání na vyzvání). {Doplňte, co `main`
+- **Každou dokončenou a ověřenou změnu vždy doveď až do `main`** —
+  push větve → založ PR → **rovnou ho mergni**. Na merge se neptej a
+  nečekej na vyzvání; uživatel chce vždy merge. {Doplňte, co `main`
   servíruje — např. GitHub Pages / produkci — dokud změna není
   mergnutá, uživatel/zákazník ji nevidí.}
 

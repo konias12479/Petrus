@@ -92,9 +92,11 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
 - **Edituj postupně a cíleně** — najdi přesnou kotvu (`grep -n`),
   použij cílený edit, neposkytuj celé soubory znovu.
 - **Commituj po každé uzavřené funkci**, ne po každém dílčím kroku.
-- **Každou dokončenou a ověřenou změnu vždy doveď až do `main`**
-  (push větve → PR → merge, bez čekání na vyzvání). Co `main`
-  servíruje (Pages/produkce), doplň, až bude jasné.
+- **Každou dokončenou a ověřenou změnu vždy doveď až do `main`** —
+  push větve → založ PR → **rovnou ho mergni**. Na merge se neptej a
+  nečekej na vyzvání; uživatel chce vždy merge. Neptej se ani „mám
+  založit PR?" — prostě to udělej. Co `main` servíruje
+  (Pages/produkce), doplň, až bude jasné.
 
 ## Prostředí (platí pro Claude Code na webu)
 
