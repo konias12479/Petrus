@@ -226,6 +226,31 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   přes `page.route()`; pozor, kód přepisuje `http:`→`https:` u URL
   z Google Books — mock musí servírovat přes vlastní doménu, ne
   `http://127.0.0.1`.
+- **Ilustrace nahraných knih podle obsahu (v1.5.0):** stejný princip
+  jako obálky — jen soukromě v prohlížeči, do repa nic. Detekce
+  kapitol sdílená pro stínohru i ilustrace: `chapterStarts()`
+  nejdřív zkusí „jistý" vzor (`isHeading()` — „CHAPTER ONE", „1.
+  Titulek"); najde-li aspoň 2 shody, kniha má tenhle formát a stačí.
+  Jinak zkusí holé číslo/římskou číslici na vlastním řádku („1",
+  „II"), ale uzná je za kapitolu jen když hned následuje pořádný
+  odstavec prózy (≥80 znaků, sám není holé číslo) — jinak by chytla
+  i číslovaný obsah/rejstřík v úvodu knihy (reálně pozorováno u
+  knihy „48": „Contents / 1 / 2 / 3…" před vlastním textem).
+  `state.chapterIdx` (Set indexů) se počítá v `openReader()` a
+  nahradil přímé volání `isHeading()` v `shadowPlayFor()` — pro
+  vestavěné knihy beze změny (isHeading tam vždy najde ≥2 shod),
+  pro nahrané knihy s „holými" kapitolami teď stínohra funguje taky.
+  Pro každou kapitolu `chapterQuery()` vytáhne z textu 1–2
+  charakteristická slova (přednostně vlastní jména — capitalized
+  slovo uprostřed věty, ne na jejím začátku, s výskytem ≥2×; jinak
+  frekvenčně nejčastější obsahová slova mimo stopslova) a
+  `fetchCommonsImage()` s nimi dohledá obrázek přes Wikimedia
+  Commons (`action=query&generator=search`, `origin=*` pro CORS,
+  bez API klíče). Výsledek (`rec.contentIlls`, max 40 kapitol) se
+  cachuje v IndexedDB stejně jako obálky (`rec.contentIllsTried`
+  brání opakování); běží líně až při otevření čtečky, ne při startu
+  jako obálky. V kontejneru mockovat `commons.wikimedia.org` přes
+  `page.route()` — skutečné API zase přes proxy nejde.
 - **Logo „Petrus" v hlavičce** (`.brand`) je od v1.4.1 klikatelné —
   chová se jako tlačítko „← Zpět" (`show('library')`), funguje
   odkudkoli (i ze čtečky).

@@ -324,7 +324,7 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.4.2';
+const APP_VERSION='1.5.0';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
 let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,shadow:true},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
@@ -720,6 +720,62 @@ async function loadIllustrations(builtinId){
  }catch(e){ILL_CACHE[builtinId]=null;}
  return ILL_CACHE[builtinId];
 }
+/* ================= ilustrace nahraných knih podle obsahu kapitoly =================
+   Jen pro soukromé použití vlastníka: pro každou kapitolu se z textu
+   vytáhne pár charakteristických slov a dohledá se k nim obrázek přes
+   Wikimedia Commons (veřejné dílo/svobodná licence, bez API klíče).
+   Výsledek se cachuje v IndexedDB — do repozitáře nic nejde. */
+const STOPWORDS=new Set(['the','and','that','with','from','this','have','were','they','their','them','what','when','where','which','would','could','should','about','into','only','just','more','some','then','than','also','been','being','after','before','because','while','through','over','under','very','much','still','even','once','upon','said','says','like','well','back','down','out','off','away','again','around','without','other','another','each','every','such','same','both','many','most','less','least','make','made','take','took','give','gave','your','here','there','those','these']);
+function chapterQuery(text){
+ const sentences=splitSentences(text);
+ const proper={};
+ for(const s of sentences){
+  const words=s.match(/[A-Za-z][A-Za-z'-]{2,}/g)||[];
+  words.slice(1).forEach(w=>{if(/^[A-Z][a-z]+$/.test(w))proper[w]=(proper[w]||0)+1;});
+ }
+ const top=Object.entries(proper).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([w])=>w);
+ if(top.length)return top.join(' ');
+ const freq={};
+ for(const s of sentences){
+  (s.toLowerCase().match(/[a-z']{4,}/g)||[]).forEach(w=>{if(!STOPWORDS.has(w))freq[w]=(freq[w]||0)+1;});
+ }
+ return Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([w])=>w).join(' ');
+}
+async function fetchCommonsImage(query){
+ if(!query)return null;
+ try{
+  const r=await fetch('https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch='+encodeURIComponent('filetype:bitmap '+query)+'&gsrnamespace=6&gsrlimit=1&prop=imageinfo&iiprop=url&iiurlwidth=700&format=json&origin=*');
+  if(!r.ok)return null;
+  const j=await r.json();
+  const pages=j.query&&j.query.pages;
+  if(!pages)return null;
+  const page=Object.values(pages)[0];
+  const info=page&&page.imageinfo&&page.imageinfo[0];
+  const url=info&&(info.thumburl||info.url);
+  return url?url.replace(/^http:/,'https:'):null;
+ }catch(e){return null;}
+}
+async function buildContentIllustrations(rec){
+ const paragraphs=rec.paragraphs||[];
+ const starts=chapterStarts(paragraphs);
+ const items=[];
+ for(let i=0;i<starts.length&&items.length<40;i++){
+  const from=starts[i],to=i+1<starts.length?starts[i+1]:paragraphs.length;
+  const query=chapterQuery(paragraphs.slice(from,to).join(' '));
+  const src=await fetchCommonsImage(query);
+  if(src)items.push({par:from,src,alt:''});
+ }
+ return items;
+}
+async function loadContentIllustrations(rec){
+ if(rec.contentIlls)return rec.contentIlls;
+ if(rec.contentIllsTried)return [];
+ rec.contentIllsTried=true;
+ const items=await buildContentIllustrations(rec);
+ rec.contentIlls=items;
+ await DB.put(rec);
+ return items;
+}
 function openLightbox(it){
  const lb=$('#lightbox');
  lb.querySelector('img').src=it.src;
@@ -743,6 +799,25 @@ function gotoPage(n){
 /* stínohra na začátku kapitoly */
 const HEAD_WORD=/^(chapter|adventure)\s+[ivxlc\d]/i,HEAD_NUM=/^\d{1,2}\.\s+\S/,HEAD_ROM=/^[IVXLC]+\.\s+\S/;
 function isHeading(p){return p.length<70&&(HEAD_WORD.test(p)||HEAD_NUM.test(p)||HEAD_ROM.test(p));}
+/* Najde odstavce začínající kapitolu. Nejdřív jistá slovní/číslovaná
+   („CHAPTER ONE", „1. Titulek") — pokud jich je aspoň pár, kniha má
+   tenhle formát a stačí. Jinak zkusí holé číslo/římskou číslici na
+   vlastním řádku („1", „II"), ale jen tam, kde hned následuje pořádný
+   odstavec prózy — jinak by to chytilo i číslovaný obsah/rejstřík. */
+function chapterStarts(paragraphs){
+ const strong=[];
+ paragraphs.forEach((p,i)=>{if(isHeading(p))strong.push(i);});
+ if(strong.length>=2)return strong;
+ const BARE=/^(\d{1,3}|[ivxlcIVXLC]{1,7})$/;
+ const bare=[];
+ paragraphs.forEach((p,i)=>{
+  const t=p.trim();
+  if(!BARE.test(t))return;
+  const next=(paragraphs[i+1]||'').trim();
+  if(next.length>=80&&!BARE.test(next))bare.push(i);
+ });
+ return bare.length>=2?bare:strong;
+}
 function shadowAllowed(){
  return !!(state.ills&&state.ills.length)&&settings.shadow!==false&&settings.ills!==false
   &&!matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -750,7 +825,7 @@ function shadowAllowed(){
 function shadowPlayFor(page){
  if(!shadowAllowed())return null;
  const pg=state.pages[page]||[];
- const chunk=pg.find(par=>par.first&&isHeading(state.current.paragraphs[par.parIdx]||''));
+ const chunk=pg.find(par=>par.first&&state.chapterIdx&&state.chapterIdx.has(par.parIdx));
  if(!chunk)return null;
  const sils=state.ills.filter(i=>i.par>chunk.parIdx).slice(0,2);
  if(!sils.length)return null;
@@ -781,8 +856,10 @@ function openReader(t){
  state.current=t;state.pages=paginate(t.paragraphs);
  state.page=Math.min(t.pos.page||0,state.pages.length-1);
  state.ills=null;state.lastShadow=null;
- loadIllustrations(t.builtin).then(items=>{
-  if(state.current===t&&items){
+ state.chapterIdx=new Set(chapterStarts(t.paragraphs));
+ const illsPromise=t.builtin?loadIllustrations(t.builtin):loadContentIllustrations(t);
+ illsPromise.then(items=>{
+  if(state.current===t&&items&&items.length){
    state.ills=items;renderPage();
    if(shadowAllowed())playShadow({title:t.title,sils:items.slice(0,2)});
   }
