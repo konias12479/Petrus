@@ -172,6 +172,7 @@ h1.pgtitle{font-size:22px;margin:6px 0 0}
   </div>
   <button id="btn-back" class="icon" hidden title="Zpět do knihovny">←</button>
   <div id="book-title"></div>
+  <button id="btn-reills" class="icon" hidden title="Znovu vyhledat ilustrace ke kapitolám">🔄</button>
   <nav>
     <button id="nav-lib" title="Knihovna">📚 <span class="lbl">Knihovna</span></button>
     <button id="nav-words" title="Slovníček">⭐ <span class="lbl">Slovníček</span></button>
@@ -324,7 +325,7 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.5.1';
+const APP_VERSION='1.5.2';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
 let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,shadow:true},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
@@ -727,14 +728,23 @@ async function loadIllustrations(builtinId){
    Výsledek se cachuje v IndexedDB — do repozitáře nic nejde. */
 const STOPWORDS=new Set(['the','and','that','with','from','this','have','were','they','their','them','what','when','where','which','would','could','should','about','into','only','just','more','some','then','than','also','been','being','after','before','because','while','through','over','under','very','much','still','even','once','upon','said','says','like','well','back','down','out','off','away','again','around','without','other','another','each','every','such','same','both','many','most','less','least','make','made','take','took','give','gave','your','here','there','those','these']);
 function chapterQuery(text){
+ // Wikimedia Commons má jen reálné/encyklopedické foto — jméno
+ // fiktivní postavy tam skoro jistě nic nenajde, ale reálné místo
+ // (Londýn, hora, přístav…) ano. Proto přednost místům za předložkou
+ // („in London", „near the coast") před obecnou frekvencí slov.
+ const places={};
+ let m;const placeRe=/\b(?:in|at|near|to|from|across|over|beneath|above|outside|inside|through|toward|towards|around)\s+([A-Z][a-z]{2,})/g;
+ while((m=placeRe.exec(text)))places[m[1]]=(places[m[1]]||0)+1;
+ const top=Object.entries(places).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([w])=>w);
+ if(top.length)return top.join(' ');
  const sentences=splitSentences(text);
  const proper={};
  for(const s of sentences){
   const words=s.match(/[A-Za-z][A-Za-z'-]{2,}/g)||[];
   words.slice(1).forEach(w=>{if(/^[A-Z][a-z]+$/.test(w))proper[w]=(proper[w]||0)+1;});
  }
- const top=Object.entries(proper).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([w])=>w);
- if(top.length)return top.join(' ');
+ const top2=Object.entries(proper).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([w])=>w);
+ if(top2.length)return top2.join(' ');
  const freq={};
  for(const s of sentences){
   (s.toLowerCase().match(/[a-z']{4,}/g)||[]).forEach(w=>{if(!STOPWORDS.has(w))freq[w]=(freq[w]||0)+1;});
@@ -866,6 +876,16 @@ function openReader(t){
  });
  $('#book-title').textContent=t.title;
  show('reader');renderPage();
+}
+async function retryContentIllustrations(){
+ const t=state.current;
+ if(!t||t.builtin)return;
+ t.contentIlls=null;t.contentIllsTried=false;
+ toast('Hledám ilustrace ke kapitolám…');
+ const items=await loadContentIllustrations(t);
+ if(state.current!==t)return;
+ state.ills=items;renderPage();
+ toast(items.length?'Nalezeno '+items.length+' ilustrací.':'Pro tuhle knihu se ilustrace nenašly — Wikimedia Commons má jen reálné fotky, ne fanart k postavám.',5000);
 }
 
 /* ================= panel slovíčka ================= */
@@ -1052,6 +1072,7 @@ function show(view){
  $('#view-reader').hidden=view!=='reader';
  $('#view-words').hidden=view!=='words';
  $('#btn-back').hidden=view!=='reader';
+ $('#btn-reills').hidden=view!=='reader'||!!(state.current&&state.current.builtin);
  $('#book-title').textContent=view==='reader'&&state.current?state.current.title:'';
  if(view!=='reader')closePanel();
  if(view==='library')renderLibrary();
@@ -1064,6 +1085,7 @@ $('#file-input').onchange=e=>{handleFiles([...e.target.files]);e.target.value=''
 $('#nav-lib').onclick=()=>show('library');
 $('#nav-words').onclick=()=>show('words');
 $('#btn-back').onclick=()=>show('library');
+$('#btn-reills').onclick=retryContentIllustrations;
 $('.brand').onclick=()=>show('library');
 $('#nav-settings').onclick=()=>{$('#settings').hidden=!$('#settings').hidden;};
 $('#btn-settings-close').onclick=()=>{$('#settings').hidden=true;};
