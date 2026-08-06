@@ -325,7 +325,7 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.5.2';
+const APP_VERSION='1.5.3';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
 let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,shadow:true},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
@@ -765,15 +765,31 @@ async function fetchCommonsImage(query){
   return url?url.replace(/^http:/,'https:'):null;
  }catch(e){return null;}
 }
+function splitChapterSections(paragraphs,from,to){
+ // Dlouhou kapitolu rozdělí po ~3–4 stranách (odhad podle výchozí
+ // délky stránky), aby dostala víc než jeden obrázek — krátká
+ // kapitola vrátí jen jeden úsek, beze změny oproti dřívějšku.
+ const TARGET=4000;
+ const sections=[];let start=from,count=0;
+ for(let i=from;i<to;i++){
+  count+=paragraphs[i].length;
+  if(count>=TARGET&&i+1<to){sections.push([start,i+1]);start=i+1;count=0;}
+ }
+ sections.push([start,to]);
+ return sections;
+}
 async function buildContentIllustrations(rec){
  const paragraphs=rec.paragraphs||[];
  const starts=chapterStarts(paragraphs);
  const items=[];
  for(let i=0;i<starts.length&&items.length<40;i++){
   const from=starts[i],to=i+1<starts.length?starts[i+1]:paragraphs.length;
-  const query=chapterQuery(paragraphs.slice(from,to).join(' '));
-  const src=await fetchCommonsImage(query);
-  if(src)items.push({par:from,src,alt:''});
+  for(const[sFrom,sTo]of splitChapterSections(paragraphs,from,to)){
+   if(items.length>=40)break;
+   const query=chapterQuery(paragraphs.slice(sFrom,sTo).join(' '));
+   const src=await fetchCommonsImage(query);
+   if(src)items.push({par:sFrom,src,alt:''});
+  }
  }
  return items;
 }

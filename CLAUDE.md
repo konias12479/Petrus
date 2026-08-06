@@ -240,8 +240,14 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   nahradil přímé volání `isHeading()` v `shadowPlayFor()` — pro
   vestavěné knihy beze změny (isHeading tam vždy najde ≥2 shod),
   pro nahrané knihy s „holými" kapitolami teď stínohra funguje taky.
-  Pro každou kapitolu `chapterQuery()` vytáhne z textu 1–2
-  charakteristická slova a `fetchCommonsImage()` s nimi dohledá
+  Dlouhá kapitola (`splitChapterSections()`, práh ~4000 znaků ≈ 3–4
+  strany) se rozdělí na víc úseků, každý s vlastním obrázkem — krátká
+  kapitola zůstává jeden úsek jako dřív (v1.5.3). Sekce jsou jen pro
+  ilustrace/lištu; `state.chapterIdx` (spouštěč stínohry) je pořád
+  jen ze skutečných začátků kapitol, ne z dílčích úseků — stínohra
+  („clona") se schválně nespouští na každém obratu stránky, jen na
+  začátku kapitoly. Pro každý úsek `chapterQuery()` vytáhne z textu
+  1–2 charakteristická slova a `fetchCommonsImage()` s nimi dohledá
   obrázek přes Wikimedia Commons (`action=query&generator=search`,
   `origin=*` pro CORS, bez API klíče). Priorita hledaných slov (v1.5.2):
   Commons hostuje jen reálné/encyklopedické fotky, ne fanart k
