@@ -74,6 +74,25 @@ figure.ill figcaption{font-size:12.5px;color:var(--muted);font-style:italic;marg
 #lightbox img{max-width:92vw;max-height:86vh;background:#fff;padding:10px;border-radius:6px}
 #lightbox figcaption{color:#ccc;font-style:italic;margin-top:10px;font-size:14px}
 
+/* ---------- stínohra, animace, verze ---------- */
+@media (prefers-reduced-motion: no-preference){
+ #ill-rail figure.ill,#ill-rail-left figure.ill{animation:illin .55s ease both}
+ #lightbox img{animation:lbzoom 16s ease-out both}
+}
+@keyframes illin{from{opacity:0;transform:translateY(12px)}}
+@keyframes lbzoom{to{transform:scale(1.05)}}
+#ver{position:fixed;right:12px;bottom:8px;font-size:11px;color:var(--muted);opacity:.75;z-index:5}
+#shadowplay{position:fixed;inset:0;z-index:95;background:#14100c;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .8s ease;cursor:pointer}
+#shadowplay.show{opacity:1}
+.sp-screen{position:relative;width:min(92vw,980px);height:min(70vh,600px);border-radius:14px;overflow:hidden;background:radial-gradient(ellipse 70% 60% at 50% 55%,#f4d9a3 0%,#e0b878 35%,#8a6238 70%,#3a2a18 100%)}
+.sp-screen::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 55% 45% at 50% 55%,transparent 60%,rgba(20,14,8,.55) 100%);animation:sp-flicker 3.4s ease-in-out infinite}
+.sp-title{position:absolute;top:26px;width:100%;text-align:center;color:#f7e7c6;opacity:.85;font:italic 22px Georgia,serif;letter-spacing:.12em;text-shadow:0 2px 12px #000;padding:0 20px;box-sizing:border-box}
+.sp-sil{position:absolute;bottom:-12px;filter:grayscale(1) contrast(2.2);mix-blend-mode:multiply;-webkit-mask-image:radial-gradient(ellipse 52% 56% at 50% 52%,#000 42%,transparent 74%);mask-image:radial-gradient(ellipse 52% 56% at 50% 52%,#000 42%,transparent 74%)}
+.sp-s1{height:62%;left:54%;animation:sp-drift 15s ease-in-out infinite alternate}
+.sp-s2{height:42%;left:12%;animation:sp-drift 11s ease-in-out infinite alternate-reverse}
+@keyframes sp-drift{to{transform:translateX(44px) scale(1.05)}}
+@keyframes sp-flicker{0%,100%{opacity:.9}50%{opacity:.62}}
+
 /* ---------- plovoucí tlačítko výběru ---------- */
 #selbtn{position:absolute;z-index:40;background:var(--accent);color:var(--accent-ink);border:none;border-radius:20px;padding:7px 14px;box-shadow:0 4px 14px rgba(0,0,0,.25);font-size:14px}
 
@@ -260,9 +279,15 @@ h1.pgtitle{font-size:22px;margin:6px 0 0}
     <label class="head">Ilustrace (knihy ze základní knihovny)</label>
     <button id="btn-ills">Ilustrace: zapnuty</button>
   </div>
+  <div class="set-group">
+    <label class="head">Stínohra na začátku kapitol</label>
+    <button id="btn-shadow">Stínohra: zapnuta</button>
+  </div>
 </aside>
 
 <div id="lightbox" hidden><figure><img alt=""><figcaption></figcaption></figure></div>
+<div id="shadowplay" hidden><div class="sp-screen"><div class="sp-title"></div></div></div>
+<div id="ver" hidden></div>
 
 <button id="selbtn" hidden>Přeložit výběr</button>
 <input type="file" id="file-input" hidden multiple accept=".txt,.text,.docx,.doc,.pdf,text/plain,application/pdf">
@@ -286,8 +311,9 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
+const APP_VERSION='1.1.0';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
-let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true},
+let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,shadow:true},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
 function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}
 function getWords(){return JSON.parse(localStorage.getItem(WORDS_KEY)||'[]');}
@@ -582,10 +608,49 @@ function openLightbox(it){
 }
 function gotoPage(n){
  if(!state.current)return;
+ const prev=state.page;
  state.page=Math.max(0,Math.min(state.pages.length-1,n));
  state.current.pos.page=state.page;
  DB.put(state.current);
  renderPage();
+ if(state.page!==prev){
+  const info=shadowPlayFor(state.page);
+  if(info&&state.lastShadow!==state.page){state.lastShadow=state.page;playShadow(info);}
+ }
+}
+/* stínohra na začátku kapitoly */
+const HEAD_WORD=/^(chapter|adventure)\s+[ivxlc\d]/i,HEAD_NUM=/^\d{1,2}\.\s+\S/,HEAD_ROM=/^[IVXLC]+\.\s+\S/;
+function isHeading(p){return p.length<70&&(HEAD_WORD.test(p)||HEAD_NUM.test(p)||HEAD_ROM.test(p));}
+function shadowPlayFor(page){
+ if(!(state.ills&&state.ills.length)||settings.shadow===false||settings.ills===false)return null;
+ if(matchMedia('(prefers-reduced-motion: reduce)').matches)return null;
+ const pg=state.pages[page]||[];
+ const chunk=pg.find(par=>par.first&&isHeading(state.current.paragraphs[par.parIdx]||''));
+ if(!chunk)return null;
+ const sils=state.ills.filter(i=>i.par>chunk.parIdx).slice(0,2);
+ if(!sils.length)return null;
+ return {title:state.current.paragraphs[chunk.parIdx],sils};
+}
+let spTimer=null;
+function playShadow(info){
+ const sp=$('#shadowplay'),scr=sp.querySelector('.sp-screen');
+ scr.querySelectorAll('img').forEach(i=>i.remove());
+ scr.querySelector('.sp-title').textContent=info.title;
+ info.sils.forEach((it,i)=>{
+  const img=document.createElement('img');
+  img.className='sp-sil sp-s'+(i+1);img.src=it.src;img.alt='';
+  img.onerror=()=>img.remove();
+  scr.append(img);
+ });
+ sp.hidden=false;requestAnimationFrame(()=>sp.classList.add('show'));
+ clearTimeout(spTimer);spTimer=setTimeout(closeShadow,4500);
+}
+function closeShadow(){
+ clearTimeout(spTimer);spTimer=null;
+ const sp=$('#shadowplay');
+ if(sp.hidden)return;
+ sp.classList.remove('show');
+ setTimeout(()=>{sp.hidden=true;},850);
 }
 function openReader(t){
  state.current=t;state.pages=paginate(t.paragraphs);
@@ -769,11 +834,14 @@ function applySettings(){
  $('#rng-lh').value=Math.round(settings.lh*10);$('#lh-val').textContent=settings.lh;
  const bi=$('#btn-ills');bi.classList.toggle('sel',settings.ills!==false);
  bi.textContent=settings.ills!==false?'Ilustrace: zapnuty':'Ilustrace: vypnuty';
+ const bs=$('#btn-shadow');bs.classList.toggle('sel',settings.shadow!==false);
+ bs.textContent=settings.shadow!==false?'Stínohra: zapnuta':'Stínohra: vypnuta';
  updateRail();
 }
 
 /* ================= navigace mezi pohledy ================= */
 function show(view){
+ $('#ver').hidden=view!=='library';
  $('#view-library').hidden=view!=='library';
  $('#view-reader').hidden=view!=='reader';
  $('#view-words').hidden=view!=='words';
@@ -844,6 +912,7 @@ selbtn.onclick=()=>{openSelection(selbtn.dataset.text||'');selbtn.hidden=true;
  window.getSelection().removeAllRanges();};
 
 document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&!$('#shadowplay').hidden){closeShadow();return;}
  if(e.key==='Escape'&&!$('#lightbox').hidden){$('#lightbox').hidden=true;return;}
  if(!$('#view-reader').hidden&&!e.target.matches('input,textarea')){
   if(e.key==='ArrowRight')gotoPage(state.page+1);
@@ -852,6 +921,7 @@ document.addEventListener('keydown',e=>{
  }
 });
 $('#lightbox').onclick=()=>{$('#lightbox').hidden=true;};
+$('#shadowplay').onclick=closeShadow;
 window.addEventListener('resize',()=>{
  if($('#view-reader').hidden)return;
  if(railMode()!==state.railMode)renderPage();else updateRail();
@@ -875,6 +945,9 @@ $('#btn-ills').onclick=()=>{
  settings.ills=settings.ills===false;saveSettings();applySettings();
  if(state.current)renderPage();
 };
+$('#btn-shadow').onclick=()=>{
+ settings.shadow=settings.shadow===false;saveSettings();applySettings();
+};
 $('#rng-width').oninput=e=>{settings.width=+e.target.value;saveSettings();applySettings();};
 $('#rng-length').oninput=e=>{
  settings.length=+e.target.value;saveSettings();applySettings();
@@ -888,6 +961,7 @@ $('#rng-lh').oninput=e=>{settings.lh=(+e.target.value)/10;saveSettings();applySe
 
 /* ================= start ================= */
 (async function init(){
+ $('#ver').textContent='v'+APP_VERSION;
  applySettings();
  try{await DB.open();state.texts=await DB.all();}
  catch(e){toast('Úložiště prohlížeče není dostupné — texty nepůjde uložit.');}
