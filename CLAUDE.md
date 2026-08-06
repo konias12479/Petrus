@@ -241,16 +241,26 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   vestavěné knihy beze změny (isHeading tam vždy najde ≥2 shod),
   pro nahrané knihy s „holými" kapitolami teď stínohra funguje taky.
   Pro každou kapitolu `chapterQuery()` vytáhne z textu 1–2
-  charakteristická slova (přednostně vlastní jména — capitalized
-  slovo uprostřed věty, ne na jejím začátku, s výskytem ≥2×; jinak
-  frekvenčně nejčastější obsahová slova mimo stopslova) a
-  `fetchCommonsImage()` s nimi dohledá obrázek přes Wikimedia
-  Commons (`action=query&generator=search`, `origin=*` pro CORS,
-  bez API klíče). Výsledek (`rec.contentIlls`, max 40 kapitol) se
-  cachuje v IndexedDB stejně jako obálky (`rec.contentIllsTried`
-  brání opakování); běží líně až při otevření čtečky, ne při startu
-  jako obálky. V kontejneru mockovat `commons.wikimedia.org` přes
-  `page.route()` — skutečné API zase přes proxy nejde.
+  charakteristická slova a `fetchCommonsImage()` s nimi dohledá
+  obrázek přes Wikimedia Commons (`action=query&generator=search`,
+  `origin=*` pro CORS, bez API klíče). Priorita hledaných slov (v1.5.2):
+  Commons hostuje jen reálné/encyklopedické fotky, ne fanart k
+  fiktivním postavám — jméno postavy tam skoro jistě nic nenajde, ale
+  reálné místo ano. Proto **nejdřív** místo za předložkou („in
+  London" → „London"), pak vlastní jméno uprostřed věty (≥2× výskyt),
+  až nakonec frekvenčně nejčastější obsahové slovo mimo stopslova.
+  I tak je to best-effort — u knih bez jasných reálných míst/jmen se
+  ilustrace nemusí najít vůbec (Commons nic nevrátí, `contentIlls`
+  zůstane prázdné pole). Výsledek (max 40 kapitol) se cachuje
+  v IndexedDB stejně jako obálky (`rec.contentIllsTried` brání
+  opakování); běží líně až při otevření čtečky, ne při startu jako
+  obálky. Tlačítko **🔄** v hlavičce čtečky (`btn-reills`, jen
+  u nahraných knih, ne u základní knihovny) vynuluje `contentIlls`/
+  `contentIllsTried` a zkusí hledání znovu — jediná cesta, jak dát
+  knize druhou šanci po vylepšení algoritmu nebo neúspěšném prvním
+  pokusu, protože `coverTried`/`contentIllsTried` jinak brání
+  opakování navždy. V kontejneru mockovat `commons.wikimedia.org`
+  přes `page.route()` — skutečné API zase přes proxy nejde.
 - **Logo „Petrus" v hlavičce** (`.brand`) je od v1.4.1 klikatelné —
   chová se jako tlačítko „← Zpět" (`show('library')`), funguje
   odkudkoli (i ze čtečky).
