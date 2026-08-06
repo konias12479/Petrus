@@ -192,10 +192,12 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   `prefers-reduced-motion` stínohru zcela vypne. Spouští se i při
   otevření knihy (titulní karta s názvem, `openReader`). Jemné
   animace: figury v lištách fade-in + pomalé vznášení, lightbox
-  pomalý zoom (jen bez reduced-motion). `#frieze` = stínový průvod
-  siluet po spodním okraji knihovny (fixed, `z-index:-1` za obsahem,
-  jen line-art obrázky — celoplošné skeny dělají „krabice"; řídí ho
-  týž `settings.shadow`).
+  pomalý zoom (jen bez reduced-motion). `#frieze` = statická koláž
+  ilustrací při pravém okraji knihovny (fixed sloupec, `z-index:-1`
+  za obsahem, střídavé natočení, viněta přes mask-image; pod šířku
+  1360 px se schová; řídí ho týž `settings.shadow`). Původně to byl
+  animovaný průvod siluet po spodním okraji — předěláno na statické
+  na přání uživatele (v1.3.2).
 - **Verze aplikace:** `APP_VERSION` v index.html, badge `#ver` vpravo
   dole jen v knihovně. **Při každé uživatelsky viditelné změně verzi
   zvyš** (patch drobnost, minor funkce) — uživatel podle ní pozná,
