@@ -188,7 +188,15 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
    opakovanými commity v smyčce (další pokus může znovu narazit na
    stejné zpomalení a další 10 minut čekání) — počkat s odstupem
    (desítky minut) a zkusit znovu, nebo nechat uživatele spustit
-   nasazení ručně, až degradace pravděpodobně odezní.
+   nasazení ručně, až degradace pravděpodobně odezní. Potvrzeno v praxi
+   (6.8.2026): dva pokusy po sobě skončily timeoutem, další (~13 minut
+   po druhém, přes `workflow_dispatch`) už doběhl za ~40 s. Zdroj Pages
+   zůstal po celou dobu na „GitHub Actions" beze změny — přepínání na
+   „Deploy from a branch" nebylo potřeba, degradace odezněla sama.
+   Pokud by odeznít nechtěla, „Deploy from a branch" (Settings → Pages)
+   je funkční obchvat, protože nejede přes stejné Deployments API, ale
+   je to změna nastavení repa, kterou musí kvůli proxy (bod 2) udělat
+   uživatel ručně.
 
 ## Udržuj tento soubor sám — dělej to na konci každého úkolu
 
