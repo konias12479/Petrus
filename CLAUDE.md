@@ -175,6 +175,20 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
    posledního běhu (`deploy-pages` step) přes GitHub API/MCP — teprve
    pokud tam nic nesedí, uvažuj o výpadku. Řešení: nový commit (jiné
    SHA), ne opakovaný re-run stejného běhu.
+4. **Existuje i druhý, odlišný vzorec: nasazení uvízne ve frontě i pro
+   úplně nové SHA** a po plných 10 minutách (`timeout: 600000` u
+   `deploy-pages`) samo skončí timeoutem — v logu `Current status:
+   deployment_queued` desítky opakování v řadě, případně chvíli
+   střídání s `deployment_in_progress`, pak `##[error]Timeout reached,
+   aborting!` → `Canceled deployment`. Na rozdíl od bodu 3 tohle není
+   „SHA je spálené" (žádné dřívější `Deployment cancelled` pro to SHA
+   nepředcházelo) — jde o skutečné zpomalení GitHub Pages backendu při
+   zpracování fronty nasazení, které status page (githubstatus.com)
+   nemusí vykazovat jako incident. Ověřený postup: nezkoušet honit
+   opakovanými commity v smyčce (další pokus může znovu narazit na
+   stejné zpomalení a další 10 minut čekání) — počkat s odstupem
+   (desítky minut) a zkusit znovu, nebo nechat uživatele spustit
+   nasazení ručně, až degradace pravděpodobně odezní.
 
 ## Udržuj tento soubor sám — dělej to na konci každého úkolu
 
