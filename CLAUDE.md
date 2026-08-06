@@ -203,8 +203,18 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   dohledávají za běhu v prohlížeči a ukládají do IndexedDB
   (`rec.cover`), do veřejného repa nikdy nic nejde. Automat: po
   importu (a při startu pro starší záznamy) `autoCover()` → Google
-  Books API (`intitle:`, bez klíče), fallback Open Library; uloží se
-  URL náhledu; `rec.coverTried` brání opakovaným dotazům. Ručně:
+  Books API (`intitle:`, bez klíče, 10 kandidátů), fallback Open
+  Library; z kandidátů se vybírá **přesná shoda normalizovaného
+  názvu** (`normTitle` — jen a-z0-9), ne první „nejrelevantnější"
+  výsledek — u krátkých/obecných názvů (typicky čísla, „48" apod.)
+  bez klíčového slova/autora je fulltextová relevance nespolehlivá
+  (v1.4.1 takhle omylem přišil obálku úplně jiné knihy). Bez přesné
+  shody se u názvů kratších než 8 znaků (po normalizaci) obálka
+  vůbec nenasadí — radši žádná než špatná; delší/specifičtější názvy
+  si první výsledek jako dřív ponechají. `rec.coverTried` brání
+  opakovaným dotazům (u záznamu se automat spustí jen jednou;
+  případnou špatnou/chybějící obálku napraví ruční tlačítko 🖼).
+  Ručně:
   tlačítko 🖼 na kartě → file picker → zmenšení na 420 px přes canvas
   → JPEG dataURL (funguje offline a přepíše chybný automat). Karta
   bez obálky dál ukazuje název + úryvek. V kontejneru API mockovat
