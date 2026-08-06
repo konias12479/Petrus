@@ -1,9 +1,4 @@
-# {NÁZEV PROJEKTU} — kontext pro Claude Code
-
-> Šablona obecných pravidel (převzato z projektu OLPE, 08/2026).
-> Místa ve složených závorkách {…} doplňte podle projektu; sekce
-> označené „doplňte později" klidně nechte prázdné a nechte je Clauda
-> průběžně plnit podle pravidla „Udržuj tento soubor sám" na konci.
+# Petrus — kontext pro Claude Code
 
 ## Kontrola modelu a kontextu — udělej TOTO JAKO PRVNÍ, před jakoukoli prací
 
@@ -88,18 +83,18 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
 
 ## Jak pracovat na tomto projektu
 
-- {Doplňte: jak se projekt spouští — build/bez buildu, jak zobrazit
-  výsledek, co je „hotovo".}
-- **Po každé změně ověř, že nic nespadlo** — {doplňte konkrétní
-  příkazy: syntax check, testy, lint}. Neposílej změnu bez ověření;
-  i drobná úprava umí něco rozbít.
+- Projekt Petrus je na začátku — repo zatím obsahuje jen tento soubor a
+  šablonu `CLAUDEsablona.md`. Jak přibude kód, doplň sem: jak se
+  projekt spouští, jak zobrazit výsledek, co je „hotovo".
+- **Po každé změně ověř, že nic nespadlo** — konkrétní příkazy (syntax
+  check, testy, lint) doplň, jakmile v projektu budou. Neposílej změnu
+  bez ověření; i drobná úprava umí něco rozbít.
 - **Edituj postupně a cíleně** — najdi přesnou kotvu (`grep -n`),
   použij cílený edit, neposkytuj celé soubory znovu.
 - **Commituj po každé uzavřené funkci**, ne po každém dílčím kroku.
 - **Každou dokončenou a ověřenou změnu vždy doveď až do `main`**
-  (push větve → PR → merge, bez čekání na vyzvání). {Doplňte, co `main`
-  servíruje — např. GitHub Pages / produkci — dokud změna není
-  mergnutá, uživatel/zákazník ji nevidí.}
+  (push větve → PR → merge, bez čekání na vyzvání). Co `main`
+  servíruje (Pages/produkce), doplň, až bude jasné.
 
 ## Prostředí (platí pro Claude Code na webu)
 
@@ -119,7 +114,7 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
 ## Architektura projektu
 
 {Doplňte později — strukturu, klíčové soubory, datový model, konvence
-pojmenování. Nechte Clauda sekci plnit průběžně dle pravidla níže.}
+pojmenování. Sekce se plní průběžně dle pravidla níže.}
 
 ## Časté chyby z historie projektu (nedělej znovu)
 
