@@ -207,6 +207,14 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
    je funkční obchvat, protože nejede přes stejné Deployments API, ale
    je to změna nastavení repa, kterou musí kvůli proxy (bod 2) udělat
    uživatel ručně.
+5. **Třetí vzorec: přechodná OIDC chyba při vytváření nasazení** — krok
+   `deploy-pages` spadne hned (ne po timeoutu) s chybou typu
+   `Failed to create deployment … no keys match the id token` (validace
+   OIDC tokenu na straně GitHubu). Není to problém konfigurace repa ani
+   workflow — jde o přechodný stav; řešení je prostý re-run téhož běhu
+   (na rozdíl od bodu 3 tady SHA „spálené" není). Teprve pokud selže
+   opakovaně stejnou chybou, zkoumej `permissions: id-token: write`
+   ve workflow.
 
 ## Udržuj tento soubor sám — dělej to na konci každého úkolu
 
