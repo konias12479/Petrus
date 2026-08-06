@@ -163,10 +163,18 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
    přes GitHub Actions workflow (tam token práva má).
 3. **Nasazení Pages umí uvíznout na „Deployment cancelled" pro
    konkrétní commit SHA** — `deploy-pages` nasazení má ID = SHA
-   commitu; když první pokus vyprší (`deployment_queued` timeout),
-   GitHub další pokusy pro **stejné** SHA rovnou zruší, i po ručním
-   re-run workflow. Řešení: nový commit (jiné SHA), ne opakovaný
-   re-run stejného běhu.
+   commitu; jakmile GitHub jednou nasazení pro dané SHA zruší (ať už
+   kvůli vypršení `deployment_queued`, nebo hned po pár sekundách bez
+   zjevného důvodu), další pokusy pro **stejné** SHA rovnou zamítá, i
+   po ručním re-run workflow — vidět v logu kroku `deploy-pages` jako
+   `Creating Pages deployment... ID: <sha>` → `##[error]Deployment
+   cancelled.` **Toto NENÍ výpadek GitHubu** — status page
+   (githubstatus.com) může ukazovat vše v pořádku, protože jde o stav
+   vázaný na konkrétní SHA, ne o incident služby. Než cokoliv
+   diagnostikuješ jako „výpadek Pages", vždy nejdřív ověř skutečný log
+   posledního běhu (`deploy-pages` step) přes GitHub API/MCP — teprve
+   pokud tam nic nesedí, uvažuj o výpadku. Řešení: nový commit (jiné
+   SHA), ne opakovaný re-run stejného běhu.
 
 ## Udržuj tento soubor sám — dělej to na konci každého úkolu
 
