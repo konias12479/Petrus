@@ -27,11 +27,16 @@ patří do jedné potvrzovací řádky.
      vysoký effort**.
 2. **Porovnej se skutečně nastaveným modelem** (vidíš ho v UI u pole
    pro zadání).
-3. **Pokud nesedí: ZASTAV ÚLOHU.** Napiš, jaký model doporučuješ a
-   proč, a **nezačínej pracovat**, dokud uživatel nepřepne na
-   doporučený model a nepotvrdí to (model nejde přepnout programově —
-   přepíná ho uživatel v UI). Žádná výjimka typu „pokračuj i tak"
-   neplatí — úloha čeká na přepnutí.
+3. **Pokud nesedí — v KTERÉMKOLI směru — ZASTAV ÚLOHU.** „Nesedí"
+   znamená: nastavený model je **slabší**, než úkol žádá, **NEBO
+   zbytečně silnější** (dražší), než je potřeba. V obou případech
+   napiš jen doporučení, jaký model a effort přepnout a proč, a
+   **nezačínej pracovat**, dokud uživatel model nepřepne a nepotvrdí
+   to. Formulace typu „klidně by stačil menší model — pokračuji" je
+   porušení tohoto pravidla: správná reakce je zastavit a doporučit
+   menší model. (Model nejde přepnout programově — přepíná ho uživatel
+   v UI.) Žádná výjimka typu „pokračuj i tak" neplatí — úloha čeká na
+   přepnutí.
 4. **Pokud sedí,** napiš jednu potvrzovací řádku a pokračuj — je to
    jediný způsob, jak uživatel pozná, že kontrola proběhla.
 5. Kontrolu prováděj při **každém** požadavku, i uprostřed dlouhé
