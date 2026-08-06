@@ -178,7 +178,11 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   skryjí; víc figur na stránce se střídavě rozdělí vpravo/vlevo; když
   stránka kotvu nemá, lišty ukážou nejbližší předchozí a následující
   ilustraci (jen v lištách, ne v textu) — obraz tak doprovází celou
-  kapitolu. Klik = lightbox (`#lightbox`), Escape/klik zavírá.
+  kapitolu. V dvoulištovém režimu (`railMode()===2`) se od v1.5.4
+  i stránka s jen jedním vlastním obrázkem doplní o nejbližší další
+  z knihy, ať druhá lišta nezůstane prázdná zbytečně — bez knihy
+  s víc ilustracemi (jen jedna v celé knize) se nic nezdvojuje, druhá
+  lišta prostě zůstane prázdná. Klik = lightbox (`#lightbox`), Escape/klik zavírá.
   Přepínač `settings.ills` v zásuvce vzhledu. Knihy s manifestem
   mají v `BUILTIN_BOOKS` příznak `ills:true` (jinak se fetch nedělá).
 - **Stínohra kapitol:** při přechodu na stránku s nadpisem kapitoly
