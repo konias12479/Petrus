@@ -161,6 +161,12 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
    repa, Pages endpointy) — hlásí 403 „not permitted through this
    proxy". Takové akce musí udělat uživatel ručně v UI, nebo je řeš
    přes GitHub Actions workflow (tam token práva má).
+3. **Nasazení Pages umí uvíznout na „Deployment cancelled" pro
+   konkrétní commit SHA** — `deploy-pages` nasazení má ID = SHA
+   commitu; když první pokus vyprší (`deployment_queued` timeout),
+   GitHub další pokusy pro **stejné** SHA rovnou zruší, i po ručním
+   re-run workflow. Řešení: nový commit (jiné SHA), ne opakovaný
+   re-run stejného běhu.
 
 ## Udržuj tento soubor sám — dělej to na konci každého úkolu
 
