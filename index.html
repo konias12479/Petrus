@@ -38,6 +38,9 @@ main{max-width:2000px;margin:0 auto;padding:20px 16px 80px}
 .pbar i{display:block;height:100%;background:var(--accent)}
 .card .del{margin-left:auto}
 #drop-hint{border:2px dashed var(--border);border-radius:var(--radius);padding:26px;text-align:center;color:var(--muted);margin-top:18px}
+.libsec-head{margin:26px 0 0;font-size:15px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.card .author{font-size:13px;color:var(--muted)}
+.card .get{margin-left:auto;font-size:18px}
 #drop-hint.drag{border-color:var(--accent);background:var(--hl)}
 .empty{display:flex;flex-direction:column;align-items:center;gap:14px;padding:40px 10px;text-align:center;color:var(--muted)}
 .empty svg{width:180px;height:auto}
@@ -154,6 +157,8 @@ h1.pgtitle{font-size:22px;margin:6px 0 0}
       <div><strong>Knihovna je zatím prázdná.</strong><br>Nahraj první anglický text a začni číst.</div>
     </div>
     <div id="drop-hint">Soubor sem můžeš také přetáhnout myší.</div>
+    <h2 class="libsec-head" id="builtin-head">Základní knihovna — klasiky zdarma (Project Gutenberg)</h2>
+    <div id="builtin-cards" class="cards"></div>
   </section>
 
   <!-- ČTEČKA -->
@@ -379,8 +384,46 @@ async function handleFiles(files){
  renderLibrary();
 }
 
+/* ================= základní knihovna ================= */
+const BUILTIN_BOOKS=[
+ {id:'alice',file:'books/alice-in-wonderland.txt',title:"Alice's Adventures in Wonderland",author:'Lewis Carroll',note:'jednodušší angličtina'},
+ {id:'oz',file:'books/wizard-of-oz.txt',title:'The Wonderful Wizard of Oz',author:'L. Frank Baum',note:'jednodušší angličtina'},
+ {id:'sherlock',file:'books/sherlock-holmes.txt',title:'The Adventures of Sherlock Holmes',author:'Arthur Conan Doyle',note:'středně náročné · povídky'},
+ {id:'gatsby',file:'books/great-gatsby.txt',title:'The Great Gatsby',author:'F. Scott Fitzgerald',note:'náročnější'},
+];
+async function addBuiltin(b){
+ try{
+  const r=await fetch(b.file);
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const paragraphs=textToParagraphs(await r.text());
+  const rec={id:Date.now()+'-'+Math.random().toString(36).slice(2,8),
+   builtin:b.id,title:b.title,addedAt:Date.now(),paragraphs,pos:{page:0}};
+  await DB.put(rec);state.texts.push(rec);
+  toast('„'+b.title+'" přidáno do knihovny.');
+  openReader(rec);
+ }catch(e){toast('Knihu se nepodařilo stáhnout ('+(e.message||e)+') — zkontroluj připojení.',6000);}
+}
+function renderBuiltin(){
+ const cont=$('#builtin-cards');cont.innerHTML='';
+ const avail=BUILTIN_BOOKS.filter(b=>!state.texts.some(t=>t.builtin===b.id));
+ $('#builtin-head').hidden=avail.length===0;
+ for(const b of avail){
+  const card=document.createElement('div');card.className='card';
+  const h=document.createElement('h3');h.textContent=b.title;
+  const a=document.createElement('div');a.className='author';a.textContent=b.author;
+  const meta=document.createElement('div');meta.className='meta';
+  const note=document.createElement('span');note.textContent=b.note;
+  const get=document.createElement('span');get.className='get';get.textContent='⬇';
+  meta.append(note,get);
+  card.append(h,a,meta);
+  card.onclick=()=>addBuiltin(b);
+  cont.append(card);
+ }
+}
+
 /* ================= knihovna ================= */
 function renderLibrary(){
+ renderBuiltin();
  const cont=$('#cards');cont.innerHTML='';
  const list=[...state.texts].sort((a,b)=>b.addedAt-a.addedAt);
  $('#empty-lib').hidden=list.length>0;

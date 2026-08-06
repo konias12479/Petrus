@@ -142,8 +142,18 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   Speech API (speechSynthesis). Odpovědi se cachují v localStorage
   (`petrus-tr-cache`, max 400 záznamů).
 - **Úložiště:** texty v IndexedDB (db `petrus`, store `texts`,
-  záznam `{id,title,addedAt,paragraphs[],pos:{page}}`); nastavení
-  vzhledu `petrus-settings` a slovníček `petrus-words` v localStorage.
+  záznam `{id,title,addedAt,paragraphs[],pos:{page}}`; knihy ze
+  základní knihovny mají navíc `builtin:<id>`); nastavení vzhledu
+  `petrus-settings` a slovníček `petrus-words` v localStorage.
+- **Základní knihovna:** public domain klasiky v `books/*.txt`
+  (zdroj: Project Gutenberg přes GITenberg zrcadla na GitHubu,
+  hlavičky/patičky ořezány), seznam `BUILTIN_BOOKS` v index.html;
+  karta v knihovně → fetch → import do IndexedDB jako běžný text.
+  **Pozor na licence:** přidávat sem jen skutečné public domain texty
+  (Gutenberg). Zjednodušené „graded readers" (Oxford Bookworms,
+  Penguin, english-e-reader.net apod.) jsou copyrightované — do
+  veřejného repa NIKDY; uživatel si je může nahrát sám tlačítkem
+  „Nahrát text" (zůstávají jen v jeho prohlížeči).
 - **Vykreslení:** odstavce → věty (regex s lookbehind) → slova obalená
   `span.w`; stránkuje se po ~1200 znacích. Klik na slovo otevře panel
   (překlad, další významy, přeložená věta v kontextu, EN definice,
