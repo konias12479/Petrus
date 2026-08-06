@@ -181,6 +181,20 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   kapitolu. Klik = lightbox (`#lightbox`), Escape/klik zavírá.
   Přepínač `settings.ills` v zásuvce vzhledu. Knihy s manifestem
   mají v `BUILTIN_BOOKS` příznak `ills:true` (jinak se fetch nedělá).
+- **Stínohra kapitol:** při přechodu na stránku s nadpisem kapitoly
+  (`isHeading` — vzory `CHAPTER I.`, `ADVENTURE I.`, `1. Titulek`,
+  `VII. TITULEK`; jen knihy s ilustracemi) se na ~4,5 s ukáže overlay
+  `#shadowplay`: „plátno lucerny" (radiální gradient + flicker) a 1–2
+  nejbližší ilustrace kapitoly jako siluety — trik: `grayscale+contrast`
+  + `mix-blend-mode:multiply` (bílé pozadí JPEG splyne s plátnem) +
+  radiální `mask-image` viněta (rozpustí hrany celoplošných skenů,
+  např. Pagetových). Klik/Escape zavírá, `settings.shadow` přepínač,
+  `prefers-reduced-motion` stínohru zcela vypne. Jemné animace: figury
+  v lištách fade-in, lightbox pomalý zoom (jen bez reduced-motion).
+- **Verze aplikace:** `APP_VERSION` v index.html, badge `#ver` vpravo
+  dole jen v knihovně. **Při každé uživatelsky viditelné změně verzi
+  zvyš** (patch drobnost, minor funkce) — uživatel podle ní pozná,
+  jestli Pages už servíruje novou verzi.
 - **Vykreslení:** odstavce → věty (regex s lookbehind) → slova obalená
   `span.w`; stránkuje se po ~1200 znacích. Klik na slovo otevře panel
   (překlad, další významy, přeložená věta v kontextu, EN definice,
