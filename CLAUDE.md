@@ -255,7 +255,7 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   chová se jako tlačítko „← Zpět" (`show('library')`), funguje
   odkudkoli (i ze čtečky).
 - **Verze aplikace:** `APP_VERSION` v index.html, badge `#ver` vpravo
-  dole jen v knihovně. **Při každé uživatelsky viditelné změně verzi
+  dole viditelný na všech obrazovkách (od v1.5.1). **Při každé uživatelsky viditelné změně verzi
   zvyš** (patch drobnost, minor funkce) — uživatel podle ní pozná,
   jestli Pages už servíruje novou verzi.
 - **Vykreslení:** odstavce → věty (regex s lookbehind) → slova obalená
