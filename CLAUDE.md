@@ -211,6 +211,9 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   přes `page.route()`; pozor, kód přepisuje `http:`→`https:` u URL
   z Google Books — mock musí servírovat přes vlastní doménu, ne
   `http://127.0.0.1`.
+- **Logo „Petrus" v hlavičce** (`.brand`) je od v1.4.1 klikatelné —
+  chová se jako tlačítko „← Zpět" (`show('library')`), funguje
+  odkudkoli (i ze čtečky).
 - **Verze aplikace:** `APP_VERSION` v index.html, badge `#ver` vpravo
   dole jen v knihovně. **Při každé uživatelsky viditelné změně verzi
   zvyš** (patch drobnost, minor funkce) — uživatel podle ní pozná,
