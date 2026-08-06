@@ -324,7 +324,7 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.4.1';
+const APP_VERSION='1.4.2';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
 let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,shadow:true},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
@@ -449,23 +449,59 @@ async function handleFiles(files){
 /* ================= obálky nahraných knih =================
    Jen pro soukromé použití vlastníka: obálka se dohledá za běhu
    v prohlížeči a uloží do IndexedDB — do repozitáře nic nejde. */
-async function findCoverUrl(title){
- const q=encodeURIComponent(title.replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim());
+function normTitle(s){return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'').trim();}
+function pickSnippet(paragraphs){
+ for(const p of (paragraphs||[])){
+  const t=p.trim();
+  if(t.length<50||t===t.toUpperCase())continue;
+  let s=t.slice(0,90).replace(/\s+\S*$/,'');
+  if(s.length>=30)return s;
+ }
+ return null;
+}
+async function findCoverUrl(title,paragraphs){
+ // Vždy nejdřív zkus dohledat podle kousku skutečného textu knihy —
+ // fulltextová shoda přesné fráze jednoznačně určí konkrétní vydání,
+ // na rozdíl od názvu (u obecných/krátkých názvů jako „48" nespolehlivé).
+ const snippet=pickSnippet(paragraphs);
+ if(snippet){
+  try{
+   const r=await fetch('https://www.googleapis.com/books/v1/volumes?q='+encodeURIComponent('"'+snippet+'"')+'&maxResults=5&fields=items(volumeInfo(imageLinks))');
+   if(r.ok){
+    const j=await r.json();
+    const hit=(j.items||[]).find(it=>{const l=it.volumeInfo&&it.volumeInfo.imageLinks;return l&&(l.thumbnail||l.smallThumbnail);});
+    if(hit){const l=hit.volumeInfo.imageLinks;return (l.thumbnail||l.smallThumbnail).replace(/^http:/,'https:');}
+   }
+  }catch(e){}
+ }
+ const clean=title.replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim();
+ const q=encodeURIComponent(clean);
+ const localNorm=normTitle(clean);
+ // Krátké/obecné názvy (např. „48") jsou u vyhledávání podle názvu
+ // nejednoznačné — bez přesné shody radši žádná obálka než špatná.
+ const trustTop=localNorm.length>=8;
  try{
-  const r=await fetch('https://www.googleapis.com/books/v1/volumes?q=intitle:'+q+'&maxResults=1&fields=items(volumeInfo(imageLinks))');
+  const r=await fetch('https://www.googleapis.com/books/v1/volumes?q=intitle:'+q+'&maxResults=10&fields=items(volumeInfo(title,imageLinks))');
   if(r.ok){
    const j=await r.json();
-   const l=j.items&&j.items[0]&&j.items[0].volumeInfo&&j.items[0].volumeInfo.imageLinks;
-   if(l&&(l.thumbnail||l.smallThumbnail))
+   const items=(j.items||[]).filter(it=>{
+    const l=it.volumeInfo&&it.volumeInfo.imageLinks;
+    return l&&(l.thumbnail||l.smallThumbnail);
+   });
+   const pick=items.find(it=>normTitle(it.volumeInfo.title)===localNorm)||(trustTop?items[0]:null);
+   if(pick){
+    const l=pick.volumeInfo.imageLinks;
     return (l.thumbnail||l.smallThumbnail).replace(/^http:/,'https:');
+   }
   }
  }catch(e){}
  try{
-  const r=await fetch('https://openlibrary.org/search.json?title='+q+'&limit=1&fields=cover_i');
+  const r=await fetch('https://openlibrary.org/search.json?title='+q+'&limit=10&fields=title,cover_i');
   if(r.ok){
    const j=await r.json();
-   const c=j.docs&&j.docs[0]&&j.docs[0].cover_i;
-   if(c)return 'https://covers.openlibrary.org/b/id/'+c+'-M.jpg';
+   const docs=(j.docs||[]).filter(d=>d.cover_i);
+   const pick=docs.find(d=>normTitle(d.title)===localNorm)||(trustTop?docs[0]:null);
+   if(pick)return 'https://covers.openlibrary.org/b/id/'+pick.cover_i+'-M.jpg';
   }
  }catch(e){}
  return null;
@@ -473,7 +509,7 @@ async function findCoverUrl(title){
 async function autoCover(rec){
  if(rec.cover||rec.coverTried||rec.builtin)return;
  rec.coverTried=true;
- const url=await findCoverUrl(rec.title);
+ const url=await findCoverUrl(rec.title,rec.paragraphs);
  if(url)rec.cover=url;
  await DB.put(rec);
  if(url&&!$('#view-library').hidden)renderLibrary();

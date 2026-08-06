@@ -201,10 +201,25 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
 - **Obálky nahraných knih (v1.4.0):** aplikace je jen pro soukromou
   potřebu vlastníka — obálky jeho vlastních (koupených) knih se
   dohledávají za běhu v prohlížeči a ukládají do IndexedDB
-  (`rec.cover`), do veřejného repa nikdy nic nejde. Automat: po
-  importu (a při startu pro starší záznamy) `autoCover()` → Google
-  Books API (`intitle:`, bez klíče), fallback Open Library; uloží se
-  URL náhledu; `rec.coverTried` brání opakovaným dotazům. Ručně:
+  (`rec.cover`), do veřejného repa nikdy nic nejde. Automat
+  (`autoCover()`, po importu a při startu pro starší záznamy) má dva
+  kroky v `findCoverUrl(title, paragraphs)`: (1) **vždy nejdřív**
+  zkusí fulltextovou shodu — `pickSnippet()` vybere charakteristickou
+  větu z textu (≥50 znaků, ne CAPS nadpis) a hledá ji jako přesnou
+  frázi (`"…"`) v Google Books; shoda jednoznačně určí konkrétní
+  knihu bez ohledu na to, jak obecný je název souboru. (2) Když fráze
+  nikde není (kniha není v Google fulltext indexu), spadne na
+  dohledání podle názvu — 10 kandidátů z Google Books (`intitle:`)
+  s fallbackem na Open Library, vybírá se **přesná shoda
+  normalizovaného názvu** (`normTitle` — jen a-z0-9), ne první
+  „nejrelevantnější" výsledek (u krátkých/obecných názvů jako „48"
+  byla čistá relevance nespolehlivá — v1.4.1 takhle omylem přišila
+  obálku úplně jiné knihy). Bez přesné shody se u názvů kratších než
+  8 znaků obálka vůbec nenasadí — radši žádná než špatná; delší
+  názvy si první výsledek ponechají. `rec.coverTried` brání
+  opakovaným dotazům (u záznamu se automat spustí jen jednou;
+  případnou špatnou/chybějící obálku napraví ruční tlačítko 🖼).
+  Ručně:
   tlačítko 🖼 na kartě → file picker → zmenšení na 420 px přes canvas
   → JPEG dataURL (funguje offline a přepíše chybný automat). Karta
   bez obálky dál ukazuje název + úryvek. V kontejneru API mockovat
