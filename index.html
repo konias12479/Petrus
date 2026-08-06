@@ -95,6 +95,15 @@ figure.ill figcaption{font-size:12.5px;color:var(--muted);font-style:italic;marg
 .sp-s2{height:42%;left:12%;animation:sp-drift 11s ease-in-out infinite alternate-reverse}
 @keyframes sp-drift{to{transform:translateX(44px) scale(1.05)}}
 @keyframes sp-flicker{0%,100%{opacity:.9}50%{opacity:.62}}
+@media (prefers-reduced-motion: no-preference){
+ #ill-rail figure.ill,#ill-rail-left figure.ill{animation:illin .55s ease both,ill-float 9s ease-in-out 1.4s infinite alternate}
+}
+@keyframes ill-float{to{transform:translateY(-5px)}}
+#frieze{position:fixed;left:0;right:0;bottom:0;height:128px;overflow:hidden;pointer-events:none;z-index:-1}
+.frieze-track{display:flex;gap:170px;align-items:flex-end;width:max-content;height:100%;animation:frieze-move 160s linear infinite}
+#frieze img{height:112px;filter:grayscale(1) contrast(2.2);mix-blend-mode:multiply;opacity:.45;-webkit-mask-image:radial-gradient(ellipse 62% 72% at 50% 52%,#000 55%,transparent 90%);mask-image:radial-gradient(ellipse 62% 72% at 50% 52%,#000 55%,transparent 90%)}
+@keyframes frieze-move{to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion: reduce){#frieze{display:none}}
 
 /* ---------- plovoucí tlačítko výběru ---------- */
 #selbtn{position:absolute;z-index:40;background:var(--accent);color:var(--accent-ink);border:none;border-radius:20px;padding:7px 14px;box-shadow:0 4px 14px rgba(0,0,0,.25);font-size:14px}
@@ -290,6 +299,7 @@ h1.pgtitle{font-size:22px;margin:6px 0 0}
 
 <div id="lightbox" hidden><figure><img alt=""><figcaption></figcaption></figure></div>
 <div id="shadowplay" hidden><div class="sp-screen"><div class="sp-title"></div></div></div>
+<div id="frieze" hidden><div class="frieze-track"></div></div>
 <div id="ver" hidden></div>
 
 <button id="selbtn" hidden>Přeložit výběr</button>
@@ -314,7 +324,7 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.2.0';
+const APP_VERSION='1.3.0';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
 let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,shadow:true},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
@@ -639,9 +649,12 @@ function gotoPage(n){
 /* stínohra na začátku kapitoly */
 const HEAD_WORD=/^(chapter|adventure)\s+[ivxlc\d]/i,HEAD_NUM=/^\d{1,2}\.\s+\S/,HEAD_ROM=/^[IVXLC]+\.\s+\S/;
 function isHeading(p){return p.length<70&&(HEAD_WORD.test(p)||HEAD_NUM.test(p)||HEAD_ROM.test(p));}
+function shadowAllowed(){
+ return !!(state.ills&&state.ills.length)&&settings.shadow!==false&&settings.ills!==false
+  &&!matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
 function shadowPlayFor(page){
- if(!(state.ills&&state.ills.length)||settings.shadow===false||settings.ills===false)return null;
- if(matchMedia('(prefers-reduced-motion: reduce)').matches)return null;
+ if(!shadowAllowed())return null;
  const pg=state.pages[page]||[];
  const chunk=pg.find(par=>par.first&&isHeading(state.current.paragraphs[par.parIdx]||''));
  if(!chunk)return null;
@@ -673,9 +686,12 @@ function closeShadow(){
 function openReader(t){
  state.current=t;state.pages=paginate(t.paragraphs);
  state.page=Math.min(t.pos.page||0,state.pages.length-1);
- state.ills=null;
+ state.ills=null;state.lastShadow=null;
  loadIllustrations(t.builtin).then(items=>{
-  if(state.current===t&&items){state.ills=items;renderPage();}
+  if(state.current===t&&items){
+   state.ills=items;renderPage();
+   if(shadowAllowed())playShadow({title:t.title,sils:items.slice(0,2)});
+  }
  });
  $('#book-title').textContent=t.title;
  show('reader');renderPage();
@@ -854,12 +870,14 @@ function applySettings(){
  bi.textContent=settings.ills!==false?'Ilustrace: zapnuty':'Ilustrace: vypnuty';
  const bs=$('#btn-shadow');bs.classList.toggle('sel',settings.shadow!==false);
  bs.textContent=settings.shadow!==false?'Stínohra: zapnuta':'Stínohra: vypnuta';
+ $('#frieze').hidden=$('#view-library').hidden||settings.shadow===false;
  updateRail();
 }
 
 /* ================= navigace mezi pohledy ================= */
 function show(view){
  $('#ver').hidden=view!=='library';
+ $('#frieze').hidden=view!=='library'||settings.shadow===false;
  $('#view-library').hidden=view!=='library';
  $('#view-reader').hidden=view!=='reader';
  $('#view-words').hidden=view!=='words';
@@ -980,6 +998,14 @@ $('#rng-lh').oninput=e=>{settings.lh=(+e.target.value)/10;saveSettings();applySe
 /* ================= start ================= */
 (async function init(){
  $('#ver').textContent='v'+APP_VERSION;
+ const FRIEZE=['books/img/alice/illustration-2.jpg','books/img/oz/i095.jpg',
+  'books/img/oz/i035.jpg','books/img/oz/i009.jpg'];
+ const track=$('#frieze .frieze-track');
+ for(let i=0;i<4;i++)for(const src of FRIEZE){
+  const img=document.createElement('img');img.src=src;img.alt='';
+  img.onerror=()=>img.remove();
+  track.append(img);
+ }
  applySettings();
  try{await DB.open();state.texts=await DB.all();}
  catch(e){toast('Úložiště prohlížeče není dostupné — texty nepůjde uložit.');}

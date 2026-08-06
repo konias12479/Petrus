@@ -189,8 +189,13 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   + `mix-blend-mode:multiply` (bílé pozadí JPEG splyne s plátnem) +
   radiální `mask-image` viněta (rozpustí hrany celoplošných skenů,
   např. Pagetových). Klik/Escape zavírá, `settings.shadow` přepínač,
-  `prefers-reduced-motion` stínohru zcela vypne. Jemné animace: figury
-  v lištách fade-in, lightbox pomalý zoom (jen bez reduced-motion).
+  `prefers-reduced-motion` stínohru zcela vypne. Spouští se i při
+  otevření knihy (titulní karta s názvem, `openReader`). Jemné
+  animace: figury v lištách fade-in + pomalé vznášení, lightbox
+  pomalý zoom (jen bez reduced-motion). `#frieze` = stínový průvod
+  siluet po spodním okraji knihovny (fixed, `z-index:-1` za obsahem,
+  jen line-art obrázky — celoplošné skeny dělají „krabice"; řídí ho
+  týž `settings.shadow`).
 - **Verze aplikace:** `APP_VERSION` v index.html, badge `#ver` vpravo
   dole jen v knihovně. **Při každé uživatelsky viditelné změně verzi
   zvyš** (patch drobnost, minor funkce) — uživatel podle ní pozná,
