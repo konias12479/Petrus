@@ -117,9 +117,13 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
 - Balíčky pro skripty (`jsdom`, `playwright`, …) nejsou v image —
   instaluj **jedním** `npm install … --no-save` (samostatné instalace
   se navzájem odinstalují). Skripty mimo repo spouštěj s
-  `NODE_PATH=<repo>/node_modules`. Chromium je v
-  `/opt/pw-browsers/chromium` — playwrightu předej `executablePath`,
-  nesmí stahovat vlastní build.
+  `NODE_PATH=<repo>/node_modules` — POZOR: platí jen pro CommonJS
+  `require`; ESM `import` NODE_PATH ignoruje, pro `.mjs` skripty ve
+  scratchpadu udělej `ln -s <repo>/node_modules <scratchpad>/node_modules`.
+  Chromium je v `/opt/pw-browsers/chromium` — playwrightu předej
+  `executablePath`, nesmí stahovat vlastní build. Python balíčky přes
+  `pip install` (PyPI je v povolených registrech) fungují — např.
+  Pillow na zpracování obrázků.
 - Kontejner je efemérní — co není commitnuté a pushnuté, po session
   zmizí. Dočasné soubory patří do scratchpad adresáře session.
 - Egress proxy blokuje i cdnjs a překladová API aplikace — při
@@ -154,6 +158,25 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   Penguin, english-e-reader.net apod.) jsou copyrightované — do
   veřejného repa NIKDY; uživatel si je může nahrát sám tlačítkem
   „Nahrát text" (zůstávají jen v jeho prohlížeči).
+- **Ilustrace základní knihovny:** původní public domain ilustrace
+  (Tenniel/Alice, Denslow/Oz, Paget/Sherlock; Gatsby žádné nemá).
+  Zmenšené obrázky (700 px JPEG) v `books/img/<id>/`, manifesty
+  `books/illustrations/<id>.json` (`items:[{par,src,alt?,cap?}]`,
+  `par` = index odstavce z textToParagraphs). Generuje
+  `tools/build_illustrations.py` (potřebuje Pillow — `pip install
+  Pillow` v kontejneru funguje) z klonů ilustrovaných edic:
+  standardebooks/lewis-carroll_alices-adventures-in-wonderland_john-tenniel,
+  GITenberg/The-Wonderful-Wizard-of-Oz_43936 (pozor: zrcadlo #55 obrázky
+  NEMÁ, Standard Ebooks Oz taky ne), GITenberg/Adventures-of-Sherlock-Holmes-Illustrated_48320.
+  Kotvení: nejbližší odstavec u obrázku v ilustrované edici → fuzzy
+  match (normalizace + SequenceMatcher, monotónně vpřed) na náš .txt.
+  Čtečka: `paginate` si drží `parIdx`+`first`, `renderPage` vkládá
+  `figure.ill` inline PŘED kotevní odstavec a kopii do `#ill-rail`;
+  na širokém okně (≈ šířka stránky + 460 px, třída `rail-on` na
+  `#view-reader`) se zobrazí lišta vedle čtecí plochy a inline figury
+  se skryjí, jinak inline. Klik = lightbox (`#lightbox`), Escape/klik
+  zavírá. Přepínač `settings.ills` v zásuvce vzhledu. Knihy s manifestem
+  mají v `BUILTIN_BOOKS` příznak `ills:true` (jinak se fetch nedělá).
 - **Vykreslení:** odstavce → věty (regex s lookbehind) → slova obalená
   `span.w`; stránkuje se po ~1200 znacích. Klik na slovo otevře panel
   (překlad, další významy, přeložená věta v kontextu, EN definice,
@@ -207,6 +230,14 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
    je funkční obchvat, protože nejede přes stejné Deployments API, ale
    je to změna nastavení repa, kterou musí kvůli proxy (bod 2) udělat
    uživatel ručně.
+5. **Třetí vzorec: přechodná OIDC chyba při vytváření nasazení** — krok
+   `deploy-pages` spadne hned (ne po timeoutu) s chybou typu
+   `Failed to create deployment … no keys match the id token` (validace
+   OIDC tokenu na straně GitHubu). Není to problém konfigurace repa ani
+   workflow — jde o přechodný stav; řešení je prostý re-run téhož běhu
+   (na rozdíl od bodu 3 tady SHA „spálené" není). Teprve pokud selže
+   opakovaně stejnou chybou, zkoumej `permissions: id-token: write`
+   ve workflow.
 
 ## Udržuj tento soubor sám — dělej to na konci každého úkolu
 

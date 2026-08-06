@@ -1,0 +1,409 @@
+{
+ "items": [
+  {
+   "par": 13,
+   "src": "books/img/oz/i009.jpg",
+   "alt": "Dorothy and Toto"
+  },
+  {
+   "par": 14,
+   "src": "books/img/oz/i013.jpg",
+   "alt": "Aunt and Uncle"
+  },
+  {
+   "par": 30,
+   "src": "books/img/oz/i016.jpg",
+   "alt": "Dorothy and Toto on a bed"
+  },
+  {
+   "par": 34,
+   "src": "books/img/oz/i019.jpg",
+   "alt": "Dorothy and Toto"
+  },
+  {
+   "par": 39,
+   "src": "books/img/oz/i023.jpg",
+   "alt": "Munchkins"
+  },
+  {
+   "par": 44,
+   "src": "books/img/oz/i024.jpg",
+   "alt": "House on witch"
+  },
+  {
+   "par": 65,
+   "src": "books/img/oz/i027.jpg",
+   "alt": "Dorothy with slippers"
+  },
+  {
+   "par": 76,
+   "src": "books/img/oz/i028.jpg",
+   "alt": "Witch with Slate"
+  },
+  {
+   "par": 87,
+   "src": "books/img/oz/i030.jpg",
+   "alt": "Witch with wand"
+  },
+  {
+   "par": 93,
+   "src": "books/img/oz/i033.jpg",
+   "alt": "When"
+  },
+  {
+   "par": 101,
+   "src": "books/img/oz/i035.jpg",
+   "alt": "Munchkin Farmer"
+  },
+  {
+   "par": 113,
+   "src": "books/img/oz/i039.jpg",
+   "alt": "Boq"
+  },
+  {
+   "par": 133,
+   "src": "books/img/oz/i044.jpg",
+   "alt": "Dorthy and Scarecrow"
+  },
+  {
+   "par": 150,
+   "src": "books/img/oz/i049.jpg",
+   "alt": "Making Scarecrow"
+  },
+  {
+   "par": 171,
+   "src": "books/img/oz/i055.jpg",
+   "alt": "Scarecrow and crows"
+  },
+  {
+   "par": 188,
+   "src": "books/img/oz/i061.jpg",
+   "alt": "Woodsman and Toto"
+  },
+  {
+   "par": 199,
+   "src": "books/img/oz/i063.jpg",
+   "alt": "Woodsman chopping a tree"
+  },
+  {
+   "par": 224,
+   "src": "books/img/oz/i068.jpg",
+   "alt": "Scarecorw and Toto"
+  },
+  {
+   "par": 233,
+   "src": "books/img/oz/i070.jpg",
+   "alt": "Tinman"
+  },
+  {
+   "par": 235,
+   "src": "books/img/oz/i071.jpg",
+   "alt": "Shiny Tinman"
+  },
+  {
+   "par": 241,
+   "src": "books/img/oz/i076.jpg",
+   "alt": "Dorothy and Lion"
+  },
+  {
+   "par": 259,
+   "src": "books/img/oz/i079.jpg",
+   "alt": "Lion crying"
+  },
+  {
+   "par": 284,
+   "src": "books/img/oz/i082.jpg",
+   "alt": "Scarecrow and Tinman"
+  },
+  {
+   "par": 289,
+   "src": "books/img/oz/i086.jpg",
+   "alt": "Lion and Dorothy"
+  },
+  {
+   "par": 291,
+   "src": "books/img/oz/i087.jpg",
+   "alt": "Scarecrow gathering berries"
+  },
+  {
+   "par": 301,
+   "src": "books/img/oz/i089-i090_combo.jpg",
+   "alt": "Dorothy riding the Lion"
+  },
+  {
+   "par": 324,
+   "src": "books/img/oz/i095.jpg",
+   "alt": "Dorothy riding the Lion at stream"
+  },
+  {
+   "par": 331,
+   "src": "books/img/oz/i100.jpg",
+   "alt": "Stork"
+  },
+  {
+   "par": 342,
+   "src": "books/img/oz/i102.jpg",
+   "alt": "Scarecrow on pole"
+  },
+  {
+   "par": 345,
+   "src": "books/img/oz/i103.jpg",
+   "alt": "Scarecrow on pole"
+  },
+  {
+   "par": 378,
+   "src": "books/img/oz/i109-edit.jpg",
+   "alt": "The group in the poppy field"
+  },
+  {
+   "par": 388,
+   "src": "books/img/oz/i114.jpg",
+   "alt": "The queen of mice being chased"
+  },
+  {
+   "par": 402,
+   "src": "books/img/oz/i118.jpg",
+   "alt": "Tinman talking to the queen"
+  },
+  {
+   "par": 422,
+   "src": "books/img/oz/i121-i122_combo.jpg",
+   "alt": "Mice pulling the Lion"
+  },
+  {
+   "par": 430,
+   "src": "books/img/oz/i126.jpg",
+   "alt": "The gate to the Emerald City"
+  },
+  {
+   "par": 434,
+   "src": "books/img/oz/i127-i128_combo.jpg",
+   "alt": "Lion, Scarecrow, Tinman and Toto at a fence"
+  },
+  {
+   "par": 452,
+   "src": "books/img/oz/i130.jpg",
+   "alt": "Tied up Munchkin "
+  },
+  {
+   "par": 480,
+   "src": "books/img/oz/i136.jpg",
+   "alt": "Dorothy getting glasses"
+  },
+  {
+   "par": 488,
+   "src": "books/img/oz/i140.jpg",
+   "alt": "Dorothy meeting Emerald City citizen"
+  },
+  {
+   "par": 494,
+   "src": "books/img/oz/i142.jpg",
+   "alt": "Entrance to Oz's Palace"
+  },
+  {
+   "par": 500,
+   "src": "books/img/oz/i143.jpg",
+   "alt": "Waiting Room"
+  },
+  {
+   "par": 505,
+   "src": "books/img/oz/i144.jpg",
+   "alt": "Dorothy and Toto"
+  },
+  {
+   "par": 536,
+   "src": "books/img/oz/i148.jpg",
+   "alt": "The group"
+  },
+  {
+   "par": 546,
+   "src": "books/img/oz/i150.jpg",
+   "alt": "Oz as a lady"
+  },
+  {
+   "par": 564,
+   "src": "books/img/oz/i154.jpg",
+   "alt": "Tinman going to see Oz"
+  },
+  {
+   "par": 566,
+   "src": "books/img/oz/i155.jpg",
+   "alt": "Lion and bright light"
+  },
+  {
+   "par": 590,
+   "src": "books/img/oz/i162.jpg",
+   "alt": "Flying monkey"
+  },
+  {
+   "par": 595,
+   "src": "books/img/oz/i163.jpg",
+   "alt": "The Witch waiting"
+  },
+  {
+   "par": 609,
+   "src": "books/img/oz/i165.jpg",
+   "alt": "Tinman on conquered wolf"
+  },
+  {
+   "par": 619,
+   "src": "books/img/oz/i167.jpg",
+   "alt": "Scarecrow scaring crows"
+  },
+  {
+   "par": 628,
+   "src": "books/img/oz/i169.jpg",
+   "alt": "The Lion scared"
+  },
+  {
+   "par": 660,
+   "src": "books/img/oz/i178.jpg",
+   "alt": "The Witch threatening Toto"
+  },
+  {
+   "par": 674,
+   "src": "books/img/oz/i184.jpg",
+   "alt": "The Scarecrow being restuffed"
+  },
+  {
+   "par": 699,
+   "src": "books/img/oz/i190.jpg",
+   "alt": "The Scarecrow being resewn"
+  },
+  {
+   "par": 704,
+   "src": "books/img/oz/i194.jpg",
+   "alt": "Dorothy and the leader of the flying monkies"
+  },
+  {
+   "par": 705,
+   "src": "books/img/oz/i195-196_combo.jpg",
+   "alt": "Queen of the field mice"
+  },
+  {
+   "par": 738,
+   "src": "books/img/oz/i202.jpg",
+   "alt": "Man swimming"
+  },
+  {
+   "par": 748,
+   "src": "books/img/oz/i208.jpg",
+   "alt": "Oz with top hat"
+  },
+  {
+   "par": 780,
+   "src": "books/img/oz/i212.jpg",
+   "alt": "Tinman threatening Oz"
+  },
+  {
+   "par": 813,
+   "src": "books/img/oz/i218.jpg",
+   "alt": "Oz flying away in the balloon"
+  },
+  {
+   "par": 825,
+   "src": "books/img/oz/i220.jpg",
+   "alt": "Scarecrow talking to Oz"
+  },
+  {
+   "par": 831,
+   "src": "books/img/oz/i221.jpg",
+   "alt": "Tinman looking at a heart"
+  },
+  {
+   "par": 841,
+   "src": "books/img/oz/i226.jpg",
+   "alt": "Oz speaking with Scarecrow's head"
+  },
+  {
+   "par": 858,
+   "src": "books/img/oz/i230.jpg",
+   "alt": "Oz inserting Tinman's heart"
+  },
+  {
+   "par": 868,
+   "src": "books/img/oz/i231.jpg",
+   "alt": "Oz giving Lion courage"
+  },
+  {
+   "par": 883,
+   "src": "books/img/oz/i236.jpg",
+   "alt": "Dorothy watching the balloon fly away"
+  },
+  {
+   "par": 896,
+   "src": "books/img/oz/i238.jpg",
+   "alt": "Toto scaring the wizard"
+  },
+  {
+   "par": 906,
+   "src": "books/img/oz/i240.jpg",
+   "alt": "Soldier saluting Oz and Scarecrow"
+  },
+  {
+   "par": 917,
+   "src": "books/img/oz/i244.jpg",
+   "alt": "Scarecrow thinking"
+  },
+  {
+   "par": 936,
+   "src": "books/img/oz/i249.jpg",
+   "alt": "Oz soldier pointing the way"
+  },
+  {
+   "par": 965,
+   "src": "books/img/oz/i254.jpg",
+   "alt": "Dorothy meeting Glinda"
+  },
+  {
+   "par": 980,
+   "src": "books/img/oz/i259.jpg",
+   "alt": "Tinman attacking a tree"
+  },
+  {
+   "par": 993,
+   "src": "books/img/oz/i264.jpg",
+   "alt": "Dorothy in the China country"
+  },
+  {
+   "par": 1013,
+   "src": "books/img/oz/i270.jpg",
+   "alt": "China people"
+  },
+  {
+   "par": 1030,
+   "src": "books/img/oz/i272.jpg",
+   "alt": "The group climbing the wall"
+  },
+  {
+   "par": 1039,
+   "src": "books/img/oz/i276.jpg",
+   "alt": "The Lion talking with a tiger"
+  },
+  {
+   "par": 1048,
+   "src": "books/img/oz/i278.jpg",
+   "alt": "The Lion talking with the animals"
+  },
+  {
+   "par": 1065,
+   "src": "books/img/oz/i286.jpg",
+   "alt": "Dorothy talking to drummer girl"
+  },
+  {
+   "par": 1093,
+   "src": "books/img/oz/i290.jpg",
+   "alt": "Glinda's soldiers saluting"
+  },
+  {
+   "par": 1095,
+   "src": "books/img/oz/i296.jpg",
+   "alt": "Glinda waving at Dorothy"
+  },
+  {
+   "par": 1136,
+   "src": "books/img/oz/i304.jpg",
+   "alt": "Home Again"
+  }
+ ]
+}

@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
 <title>Petrus — čtení v angličtině</title>
 <style>
 *{box-sizing:border-box}
@@ -59,6 +60,19 @@ main{max-width:2000px;margin:0 auto;padding:20px 16px 80px}
 .w.active{background:var(--accent);color:var(--accent-ink)}
 .pagebar{display:flex;align-items:center;gap:14px;margin-top:14px;color:var(--muted);font-size:14px}
 .pagebar button{padding:6px 12px}
+
+/* ---------- ilustrace ---------- */
+figure.ill{margin:16px auto;text-align:center}
+figure.ill img{max-width:min(100%,360px);max-height:440px;background:#fff;padding:8px;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.1);cursor:zoom-in}
+figure.ill figcaption{font-size:12.5px;color:var(--muted);font-style:italic;margin-top:6px;max-width:360px;margin-left:auto;margin-right:auto}
+#ill-rail{display:none}
+#view-reader.rail-on #ill-rail{display:flex;flex:0 0 340px;width:340px;flex-direction:column;gap:10px;padding-top:10px}
+#view-reader.rail-on #page-content figure.ill{display:none}
+#ill-rail figure.ill{margin:0 auto}
+#lightbox{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;cursor:zoom-out}
+#lightbox figure{margin:0;text-align:center;max-width:94vw}
+#lightbox img{max-width:92vw;max-height:86vh;background:#fff;padding:10px;border-radius:6px}
+#lightbox figcaption{color:#ccc;font-style:italic;margin-top:10px;font-size:14px}
 
 /* ---------- plovoucí tlačítko výběru ---------- */
 #selbtn{position:absolute;z-index:40;background:var(--accent);color:var(--accent-ink);border:none;border-radius:20px;padding:7px 14px;box-shadow:0 4px 14px rgba(0,0,0,.25);font-size:14px}
@@ -167,6 +181,7 @@ h1.pgtitle{font-size:22px;margin:6px 0 0}
       <button class="turn" id="turn-prev" title="Předchozí strana">‹</button>
       <div class="book-page"><div id="page-content"></div></div>
       <button class="turn" id="turn-next" title="Další strana">›</button>
+      <aside id="ill-rail"></aside>
     </div>
     <div class="pagebar">
       <button id="pg-prev">← Předchozí</button>
@@ -240,7 +255,13 @@ h1.pgtitle{font-size:22px;margin:6px 0 0}
     <label class="head">Řádkování <span class="range-val" id="lh-val"></span></label>
     <input type="range" id="rng-lh" min="14" max="22" step="1">
   </div>
+  <div class="set-group">
+    <label class="head">Ilustrace (knihy ze základní knihovny)</label>
+    <button id="btn-ills">Ilustrace: zapnuty</button>
+  </div>
 </aside>
+
+<div id="lightbox" hidden><figure><img alt=""><figcaption></figcaption></figure></div>
 
 <button id="selbtn" hidden>Přeložit výběr</button>
 <input type="file" id="file-input" hidden multiple accept=".txt,.text,.docx,.doc,.pdf,text/plain,application/pdf">
@@ -265,7 +286,7 @@ const DB={db:null,
 };
 
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
-let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200},
+let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
 function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}
 function getWords(){return JSON.parse(localStorage.getItem(WORDS_KEY)||'[]');}
@@ -386,9 +407,9 @@ async function handleFiles(files){
 
 /* ================= základní knihovna ================= */
 const BUILTIN_BOOKS=[
- {id:'alice',file:'books/alice-in-wonderland.txt',title:"Alice's Adventures in Wonderland",author:'Lewis Carroll',note:'jednodušší angličtina'},
- {id:'oz',file:'books/wizard-of-oz.txt',title:'The Wonderful Wizard of Oz',author:'L. Frank Baum',note:'jednodušší angličtina'},
- {id:'sherlock',file:'books/sherlock-holmes.txt',title:'The Adventures of Sherlock Holmes',author:'Arthur Conan Doyle',note:'středně náročné · povídky'},
+ {id:'alice',file:'books/alice-in-wonderland.txt',title:"Alice's Adventures in Wonderland",author:'Lewis Carroll',note:'jednodušší angličtina',ills:true},
+ {id:'oz',file:'books/wizard-of-oz.txt',title:'The Wonderful Wizard of Oz',author:'L. Frank Baum',note:'jednodušší angličtina',ills:true},
+ {id:'sherlock',file:'books/sherlock-holmes.txt',title:'The Adventures of Sherlock Holmes',author:'Arthur Conan Doyle',note:'středně náročné · povídky',ills:true},
  {id:'gatsby',file:'books/great-gatsby.txt',title:'The Great Gatsby',author:'F. Scott Fitzgerald',note:'náročnější'},
 ];
 async function addBuiltin(b){
@@ -457,14 +478,14 @@ function splitSentences(par){
 }
 function paginate(paragraphs){
  const LIMIT=settings.length,pages=[];let cur=[],count=0,curPar=null;
- for(const p of paragraphs){
-  curPar=null;
+ paragraphs.forEach((p,gi)=>{
+  curPar=null;let si=0;
   for(const s of splitSentences(p)){
    if(count+s.length>LIMIT&&count>0){pages.push(cur);cur=[];count=0;curPar=null;}
-   if(!curPar){curPar={sentences:[]};cur.push(curPar);}
-   curPar.sentences.push(s);count+=s.length;
+   if(!curPar){curPar={sentences:[],parIdx:gi,first:si===0};cur.push(curPar);}
+   curPar.sentences.push(s);count+=s.length;si++;
   }
- }
+ });
  if(cur.length)pages.push(cur);
  return pages.length?pages:[[{sentences:['(prázdný text)']}]];
 }
@@ -482,13 +503,56 @@ function renderSentenceEl(s){
 function renderPage(){
  const cont=$('#page-content');cont.innerHTML='';
  const pg=state.pages[state.page]||[];
+ const illsOn=state.ills&&state.ills.length>0&&settings.ills!==false;
+ const rail=$('#ill-rail');rail.innerHTML='';
  for(const par of pg){
+  if(illsOn&&par.first){
+   for(const it of state.ills){
+    if(it.par===par.parIdx){cont.append(makeFigure(it));rail.append(makeFigure(it));}
+   }
+  }
   const p=document.createElement('p');
   par.sentences.forEach(s=>{p.append(renderSentenceEl(s));p.append(' ');});
   cont.append(p);
  }
+ updateRail();
  $('#pg-info').textContent='Strana '+(state.page+1)+' / '+state.pages.length;
  window.scrollTo({top:0});
+}
+function makeFigure(it){
+ const f=document.createElement('figure');f.className='ill';
+ const img=document.createElement('img');
+ img.loading='lazy';img.src=it.src;img.alt=it.alt||'';
+ img.onerror=()=>f.remove();
+ img.onclick=()=>openLightbox(it);
+ f.append(img);
+ if(it.cap){const c=document.createElement('figcaption');c.textContent=it.cap;f.append(c);}
+ return f;
+}
+function updateRail(){
+ const hasIlls=!!(state.ills&&state.ills.length>0&&settings.ills!==false);
+ const roomy=window.innerWidth>=Math.min(settings.width,window.innerWidth-100)+460;
+ $('#view-reader').classList.toggle('rail-on',hasIlls&&roomy);
+}
+const ILL_CACHE={};
+async function loadIllustrations(builtinId){
+ if(!builtinId)return null;
+ const bb=BUILTIN_BOOKS.find(b=>b.id===builtinId);
+ if(!bb||!bb.ills)return null;
+ if(ILL_CACHE[builtinId]!==undefined)return ILL_CACHE[builtinId];
+ try{
+  const r=await fetch('books/illustrations/'+builtinId+'.json');
+  ILL_CACHE[builtinId]=r.ok?(await r.json()).items:null;
+ }catch(e){ILL_CACHE[builtinId]=null;}
+ return ILL_CACHE[builtinId];
+}
+function openLightbox(it){
+ const lb=$('#lightbox');
+ lb.querySelector('img').src=it.src;
+ lb.querySelector('img').alt=it.alt||'';
+ lb.querySelector('figcaption').textContent=it.cap||'';
+ lb.querySelector('figcaption').hidden=!it.cap;
+ lb.hidden=false;
 }
 function gotoPage(n){
  if(!state.current)return;
@@ -500,6 +564,10 @@ function gotoPage(n){
 function openReader(t){
  state.current=t;state.pages=paginate(t.paragraphs);
  state.page=Math.min(t.pos.page||0,state.pages.length-1);
+ state.ills=null;
+ loadIllustrations(t.builtin).then(items=>{
+  if(state.current===t&&items){state.ills=items;renderPage();}
+ });
  $('#book-title').textContent=t.title;
  show('reader');renderPage();
 }
@@ -673,6 +741,9 @@ function applySettings(){
  $$('.fontopts button').forEach(b=>b.classList.toggle('sel',b.dataset.font===settings.font));
  $('#rng-size').value=settings.size;$('#size-val').textContent=settings.size+' px';
  $('#rng-lh').value=Math.round(settings.lh*10);$('#lh-val').textContent=settings.lh;
+ const bi=$('#btn-ills');bi.classList.toggle('sel',settings.ills!==false);
+ bi.textContent=settings.ills!==false?'Ilustrace: zapnuty':'Ilustrace: vypnuty';
+ updateRail();
 }
 
 /* ================= navigace mezi pohledy ================= */
@@ -747,12 +818,15 @@ selbtn.onclick=()=>{openSelection(selbtn.dataset.text||'');selbtn.hidden=true;
  window.getSelection().removeAllRanges();};
 
 document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&!$('#lightbox').hidden){$('#lightbox').hidden=true;return;}
  if(!$('#view-reader').hidden&&!e.target.matches('input,textarea')){
   if(e.key==='ArrowRight')gotoPage(state.page+1);
   if(e.key==='ArrowLeft')gotoPage(state.page-1);
   if(e.key==='Escape')closePanel();
  }
 });
+$('#lightbox').onclick=()=>{$('#lightbox').hidden=true;};
+window.addEventListener('resize',()=>{if(!$('#view-reader').hidden)updateRail();});
 
 /* drag & drop */
 const dropHint=$('#drop-hint');
@@ -768,6 +842,10 @@ $$('.swatch').forEach(s=>s.onclick=()=>{settings.theme=s.dataset.theme;saveSetti
 $$('.fontopts button').forEach(b=>b.onclick=()=>{settings.font=b.dataset.font;saveSettings();applySettings();});
 $('#rng-size').oninput=e=>{settings.size=+e.target.value;saveSettings();applySettings();};
 $('#btn-bold').onclick=()=>{settings.bold=!settings.bold;saveSettings();applySettings();};
+$('#btn-ills').onclick=()=>{
+ settings.ills=settings.ills===false;saveSettings();applySettings();
+ if(state.current)renderPage();
+};
 $('#rng-width').oninput=e=>{settings.width=+e.target.value;saveSettings();applySettings();};
 $('#rng-length').oninput=e=>{
  settings.length=+e.target.value;saveSettings();applySettings();
