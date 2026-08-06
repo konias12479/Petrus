@@ -450,11 +450,34 @@ async function handleFiles(files){
    Jen pro soukromé použití vlastníka: obálka se dohledá za běhu
    v prohlížeči a uloží do IndexedDB — do repozitáře nic nejde. */
 function normTitle(s){return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'').trim();}
-async function findCoverUrl(title){
+function pickSnippet(paragraphs){
+ for(const p of (paragraphs||[])){
+  const t=p.trim();
+  if(t.length<50||t===t.toUpperCase())continue;
+  let s=t.slice(0,90).replace(/\s+\S*$/,'');
+  if(s.length>=30)return s;
+ }
+ return null;
+}
+async function findCoverUrl(title,paragraphs){
+ // Vždy nejdřív zkus dohledat podle kousku skutečného textu knihy —
+ // fulltextová shoda přesné fráze jednoznačně určí konkrétní vydání,
+ // na rozdíl od názvu (u obecných/krátkých názvů jako „48" nespolehlivé).
+ const snippet=pickSnippet(paragraphs);
+ if(snippet){
+  try{
+   const r=await fetch('https://www.googleapis.com/books/v1/volumes?q='+encodeURIComponent('"'+snippet+'"')+'&maxResults=5&fields=items(volumeInfo(imageLinks))');
+   if(r.ok){
+    const j=await r.json();
+    const hit=(j.items||[]).find(it=>{const l=it.volumeInfo&&it.volumeInfo.imageLinks;return l&&(l.thumbnail||l.smallThumbnail);});
+    if(hit){const l=hit.volumeInfo.imageLinks;return (l.thumbnail||l.smallThumbnail).replace(/^http:/,'https:');}
+   }
+  }catch(e){}
+ }
  const clean=title.replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim();
  const q=encodeURIComponent(clean);
  const localNorm=normTitle(clean);
- // Krátké/obecné názvy (např. „48") jsou u fulltextového vyhledávání
+ // Krátké/obecné názvy (např. „48") jsou u vyhledávání podle názvu
  // nejednoznačné — bez přesné shody radši žádná obálka než špatná.
  const trustTop=localNorm.length>=8;
  try{
@@ -486,7 +509,7 @@ async function findCoverUrl(title){
 async function autoCover(rec){
  if(rec.cover||rec.coverTried||rec.builtin)return;
  rec.coverTried=true;
- const url=await findCoverUrl(rec.title);
+ const url=await findCoverUrl(rec.title,rec.paragraphs);
  if(url)rec.cover=url;
  await DB.put(rec);
  if(url&&!$('#view-library').hidden)renderLibrary();
