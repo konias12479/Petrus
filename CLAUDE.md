@@ -83,12 +83,16 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
 
 ## Jak pracovat na tomto projektu
 
-- Projekt Petrus je na začátku — repo zatím obsahuje jen tento soubor a
-  šablonu `CLAUDEsablona.md`. Jak přibude kód, doplň sem: jak se
-  projekt spouští, jak zobrazit výsledek, co je „hotovo".
-- **Po každé změně ověř, že nic nespadlo** — konkrétní příkazy (syntax
-  check, testy, lint) doplň, jakmile v projektu budou. Neposílej změnu
-  bez ověření; i drobná úprava umí něco rozbít.
+- Projekt = jednosouborová webová aplikace `index.html` (čtečka pro
+  výuku angličtiny). Spouští se otevřením v prohlížeči; produkce je
+  GitHub Pages z `main` (https://konias12479.github.io/Petrus/ — pokud
+  nejede, uživatel musí Pages zapnout v Settings → Pages → branch
+  `main`).
+- **Po každé změně ověř, že nic nespadlo** — spusť Playwright test
+  headless Chromiem (`/opt/pw-browsers/chromium`) proti lokálnímu
+  `python3 -m http.server`; překladová API a CDN v kontejneru nejedou,
+  mockuj je přes `page.route()`. Neposílej změnu bez ověření; i drobná
+  úprava umí něco rozbít.
 - **Edituj postupně a cíleně** — najdi přesnou kotvu (`grep -n`),
   použij cílený edit, neposkytuj celé soubory znovu.
 - **Commituj po každé uzavřené funkci**, ne po každém dílčím kroku.
@@ -112,11 +116,34 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   nesmí stahovat vlastní build.
 - Kontejner je efemérní — co není commitnuté a pushnuté, po session
   zmizí. Dočasné soubory patří do scratchpad adresáře session.
+- Egress proxy blokuje i cdnjs a překladová API aplikace — při
+  testování v kontejneru je mockuj (`page.route()` v Playwrightu);
+  v prohlížeči uživatele fungují normálně.
 
 ## Architektura projektu
 
-{Doplňte později — strukturu, klíčové soubory, datový model, konvence
-pojmenování. Sekce se plní průběžně dle pravidla níže.}
+- **`index.html`** — celá aplikace (HTML + CSS + JS v jednom souboru,
+  bez build kroku, UI česky). Pohledy: knihovna → čtečka → slovníček +
+  panel slovíčka + zásuvka nastavení vzhledu.
+- **Import textů:** .txt nativně; .pdf přes pdf.js a .docx přes
+  mammoth.js — obě knihovny se lazy-loadují z cdnjs až při potřebě
+  (starý binární .doc podporován není, hlásí se srozumitelná chyba).
+- **Překlady (klient, bez API klíče):** primárně neoficiální Google
+  endpoint `translate.googleapis.com/translate_a/single?client=gtx`
+  (dt=t překlad, dt=bd další významy), fallback MyMemory
+  (`api.mymemory.translated.net`, limit ~5000 znaků/den anonymně).
+  Výklad + příklady EN: `api.dictionaryapi.dev`. Výslovnost: Web
+  Speech API (speechSynthesis). Odpovědi se cachují v localStorage
+  (`petrus-tr-cache`, max 400 záznamů).
+- **Úložiště:** texty v IndexedDB (db `petrus`, store `texts`,
+  záznam `{id,title,addedAt,paragraphs[],pos:{page}}`); nastavení
+  vzhledu `petrus-settings` a slovníček `petrus-words` v localStorage.
+- **Vykreslení:** odstavce → věty (regex s lookbehind) → slova obalená
+  `span.w`; stránkuje se po ~1200 znacích. Klik na slovo otevře panel
+  (překlad, další významy, přeložená věta v kontextu, EN definice,
+  další výskyty v textu); výběr textu ukáže plovoucí tlačítko
+  „Přeložit výběr". Vzhled přes CSS proměnné, témata
+  `body[data-theme=light|sepia|dark]`.
 
 ## Časté chyby z historie projektu (nedělej znovu)
 
