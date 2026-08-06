@@ -324,7 +324,7 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.3.2';
+const APP_VERSION='1.4.0';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
 let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,shadow:true},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
@@ -438,11 +438,63 @@ async function handleFiles(files){
    const rec={id:Date.now()+'-'+Math.random().toString(36).slice(2,8),
     title:f.name.replace(/\.[^.]+$/,''),addedAt:Date.now(),paragraphs,pos:{page:0}};
    await DB.put(rec);state.texts.push(rec);
+   autoCover(rec);
    toast('„'+rec.title+'" přidáno do knihovny.');
    if(files.length===1)openReader(rec);else renderLibrary();
   }catch(e){toast('Chyba u souboru '+f.name+': '+(e.message||e),6000);}
  }
  renderLibrary();
+}
+
+/* ================= obálky nahraných knih =================
+   Jen pro soukromé použití vlastníka: obálka se dohledá za běhu
+   v prohlížeči a uloží do IndexedDB — do repozitáře nic nejde. */
+async function findCoverUrl(title){
+ const q=encodeURIComponent(title.replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim());
+ try{
+  const r=await fetch('https://www.googleapis.com/books/v1/volumes?q=intitle:'+q+'&maxResults=1&fields=items(volumeInfo(imageLinks))');
+  if(r.ok){
+   const j=await r.json();
+   const l=j.items&&j.items[0]&&j.items[0].volumeInfo&&j.items[0].volumeInfo.imageLinks;
+   if(l&&(l.thumbnail||l.smallThumbnail))
+    return (l.thumbnail||l.smallThumbnail).replace(/^http:/,'https:');
+  }
+ }catch(e){}
+ try{
+  const r=await fetch('https://openlibrary.org/search.json?title='+q+'&limit=1&fields=cover_i');
+  if(r.ok){
+   const j=await r.json();
+   const c=j.docs&&j.docs[0]&&j.docs[0].cover_i;
+   if(c)return 'https://covers.openlibrary.org/b/id/'+c+'-M.jpg';
+  }
+ }catch(e){}
+ return null;
+}
+async function autoCover(rec){
+ if(rec.cover||rec.coverTried||rec.builtin)return;
+ rec.coverTried=true;
+ const url=await findCoverUrl(rec.title);
+ if(url)rec.cover=url;
+ await DB.put(rec);
+ if(url&&!$('#view-library').hidden)renderLibrary();
+}
+async function setCustomCover(rec,file){
+ const img=new Image(),url=URL.createObjectURL(file);
+ try{await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=url;});}
+ finally{setTimeout(()=>URL.revokeObjectURL(url),1000);}
+ const scale=Math.min(1,420/img.naturalWidth);
+ const cv=document.createElement('canvas');
+ cv.width=Math.round(img.naturalWidth*scale);cv.height=Math.round(img.naturalHeight*scale);
+ cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+ rec.cover=cv.toDataURL('image/jpeg',.82);
+ await DB.put(rec);renderLibrary();
+}
+function pickCover(rec){
+ const inp=document.createElement('input');
+ inp.type='file';inp.accept='image/*';
+ inp.onchange=()=>{if(inp.files[0])
+  setCustomCover(rec,inp.files[0]).catch(()=>toast('Obrázek se nepodařilo načíst.'));};
+ inp.click();
 }
 
 /* ================= základní knihovna ================= */
@@ -517,9 +569,15 @@ function renderLibrary(){
   del.onclick=async e=>{e.stopPropagation();
    if(confirm('Smazat „'+t.title+'" z knihovny?')){
     await DB.del(t.id);state.texts=state.texts.filter(x=>x.id!==t.id);renderLibrary();}};
-  meta.append(bar,pctEl,del);
+  if(!t.builtin){
+   const cb=document.createElement('button');cb.className='icon';cb.textContent='🖼';
+   cb.title='Nastavit obálku z vlastního obrázku';
+   cb.onclick=e=>{e.stopPropagation();pickCover(t);};
+   meta.append(bar,pctEl,cb,del);
+  }else meta.append(bar,pctEl,del);
   const bb=t.builtin&&BUILTIN_BOOKS.find(b=>b.id===t.builtin);
   if(bb)card.append(makeCover(bb),h,meta);
+  else if(t.cover)card.append(makeCover({cover:t.cover}),h,meta);
   else card.append(h,ex,meta);
   card.onclick=()=>openReader(t);
   cont.append(card);
@@ -1010,6 +1068,7 @@ $('#rng-lh').oninput=e=>{settings.lh=(+e.target.value)/10;saveSettings();applySe
  try{await DB.open();state.texts=await DB.all();}
  catch(e){toast('Úložiště prohlížeče není dostupné — texty nepůjde uložit.');}
  show('library');
+ state.texts.forEach(t=>autoCover(t));
 })();
 </script>
 </body>

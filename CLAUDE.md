@@ -198,6 +198,19 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   1360 px se schová; řídí ho týž `settings.shadow`). Původně to byl
   animovaný průvod siluet po spodním okraji — předěláno na statické
   na přání uživatele (v1.3.2).
+- **Obálky nahraných knih (v1.4.0):** aplikace je jen pro soukromou
+  potřebu vlastníka — obálky jeho vlastních (koupených) knih se
+  dohledávají za běhu v prohlížeči a ukládají do IndexedDB
+  (`rec.cover`), do veřejného repa nikdy nic nejde. Automat: po
+  importu (a při startu pro starší záznamy) `autoCover()` → Google
+  Books API (`intitle:`, bez klíče), fallback Open Library; uloží se
+  URL náhledu; `rec.coverTried` brání opakovaným dotazům. Ručně:
+  tlačítko 🖼 na kartě → file picker → zmenšení na 420 px přes canvas
+  → JPEG dataURL (funguje offline a přepíše chybný automat). Karta
+  bez obálky dál ukazuje název + úryvek. V kontejneru API mockovat
+  přes `page.route()`; pozor, kód přepisuje `http:`→`https:` u URL
+  z Google Books — mock musí servírovat přes vlastní doménu, ne
+  `http://127.0.0.1`.
 - **Verze aplikace:** `APP_VERSION` v index.html, badge `#ver` vpravo
   dole jen v knihovně. **Při každé uživatelsky viditelné změně verzi
   zvyš** (patch drobnost, minor funkce) — uživatel podle ní pozná,
