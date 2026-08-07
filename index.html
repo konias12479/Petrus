@@ -50,7 +50,7 @@ main{max-width:2000px;margin:0 auto;padding:20px 16px 80px}
 .empty svg{width:180px;height:auto}
 
 /* ---------- čtečka ---------- */
-#view-reader{display:flex;flex-direction:column;align-items:center}
+#view-reader{display:flex;flex-direction:column;align-items:center;padding-bottom:64px}
 .book-wrap{display:flex;align-items:stretch;gap:6px;width:100%;justify-content:center}
 .turn{border:none;background:transparent;font-size:34px;color:var(--muted);padding:0 6px;border-radius:var(--radius)}
 .turn:hover{color:var(--accent);background:var(--hl)}
@@ -61,10 +61,13 @@ main{max-width:2000px;margin:0 auto;padding:20px 16px 80px}
 .w{cursor:pointer;border-radius:3px}
 .w:hover{background:var(--hl)}
 .w.active{background:var(--accent);color:var(--accent-ink)}
-.pagebar{display:flex;align-items:center;gap:14px;margin-top:14px;padding:8px 4px;color:var(--muted);font-size:14px;position:sticky;bottom:0;background:var(--bg);z-index:4}
+.pagebar{display:flex;align-items:center;gap:14px;padding:10px 16px;color:var(--muted);font-size:14px;
+ position:fixed;left:0;right:0;bottom:0;max-width:2000px;margin:0 auto;
+ background:var(--page);border-top:1px solid var(--border);box-shadow:0 -4px 14px rgba(0,0,0,.08);
+ z-index:25;flex-wrap:wrap}
 .pagebar button{padding:6px 12px}
 .pagebar .goto{display:flex;align-items:center;gap:6px;margin-left:auto}
-.pagebar .goto input{width:64px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--page);color:var(--ink);font-size:14px}
+.pagebar .goto input{width:64px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);font-size:14px}
 
 /* ---------- ilustrace ---------- */
 figure.ill{margin:16px auto;text-align:center;max-width:360px}
@@ -415,7 +418,7 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.6.0';
+const APP_VERSION='1.6.1';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
 let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,rails:true,shadow:true},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
