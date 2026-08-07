@@ -145,6 +145,46 @@ figure.ill figcaption{font-size:12.5px;color:#a3855c;font-style:italic;margin-to
 .practice #words-table tr.revealed td.tr{filter:none}
 .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 
+/* ---------- učení ---------- */
+#view-learn{max-width:820px;margin:0 auto}
+.learn-stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+.learn-stats .st{background:var(--page);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;min-width:118px}
+.learn-stats .st b{display:block;font-size:26px;line-height:1.2}
+.learn-stats .st span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.learn-start{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+#learn-hint{margin-top:16px}
+.lrn-bar{height:6px;background:var(--border);border-radius:4px;overflow:hidden;margin-top:20px}
+.lrn-fill{height:100%;background:var(--accent);width:0;transition:width .3s}
+.lrn-meta{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:7px}
+.lrn-card{background:var(--page);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-top:12px}
+.lrn-prompt{font-size:14px;color:var(--muted);margin-bottom:14px}
+.lrn-prompt b{color:var(--ink);font-size:17px}
+.lrn-sent{font-family:Georgia,'Times New Roman',serif;font-size:19px;line-height:2.2}
+.lrn-slots{display:inline-flex;gap:5px;margin:0 5px;vertical-align:-7px}
+.slot{width:27px;height:34px;border-bottom:2px solid var(--accent);display:inline-flex;align-items:center;justify-content:center;
+ font-family:system-ui,sans-serif;font-weight:700;font-size:20px;cursor:pointer;user-select:none}
+.slot.filled{background:var(--hl);border-radius:5px 5px 0 0}
+.lrn-tiles{display:flex;gap:9px;flex-wrap:wrap;margin-top:24px}
+.tile{width:42px;height:46px;padding:0;font-size:21px;font-weight:700;background:var(--bg);border-radius:9px}
+.tile.used{opacity:.22;pointer-events:none}
+.lrn-card.ok .slot{border-color:#2e8b57;color:#2e8b57}
+.lrn-card.bad .lrn-slots{animation:shake .38s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.lrn-fb{margin-top:18px;padding:12px 15px;border-radius:var(--radius);font-size:15px;line-height:1.55}
+.lrn-fb.ok{background:rgba(46,139,87,.14)}
+.lrn-fb.bad{background:rgba(190,70,70,.14)}
+.lrn-fb .gram{margin-top:8px;font-size:14px;color:var(--muted)}
+.lrn-fb .forms{font-family:Georgia,serif;font-size:16px;color:var(--ink)}
+.lrn-actions{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap;align-items:center}
+#learn-done{background:var(--page);border:1px solid var(--border);border-radius:var(--radius);padding:26px;margin-top:20px;text-align:center}
+#learn-done .big{font-size:34px;margin-bottom:8px}
+#learn-done .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:20px}
+.gram-note{font-size:14px;line-height:1.6}
+.forms{font-family:Georgia,serif;font-size:16px;margin-top:2px}
+.forms i{font-style:normal;color:var(--accent);font-weight:700}
+button:disabled{opacity:.45;cursor:default}
+button:disabled:hover{border-color:var(--border)}
+
 /* ---------- nastavení vzhledu ---------- */
 #settings{position:fixed;z-index:60;top:0;right:0;bottom:0;width:320px;max-width:90vw;background:var(--panel);border-left:1px solid var(--border);box-shadow:-6px 0 30px rgba(0,0,0,.2);padding:18px;overflow-y:auto}
 #settings h2{margin:0 0 14px;font-size:17px}
@@ -176,9 +216,11 @@ h1.pgtitle{font-size:22px;margin:6px 0 0}
   <button id="btn-back" class="icon" hidden title="Zpět do knihovny">←</button>
   <div id="book-title"></div>
   <button id="btn-reills" class="icon" hidden title="Znovu vyhledat ilustrace ke kapitolám">🔄</button>
+  <button id="btn-learn" class="icon" hidden title="Procvičit slova z této části knihy">🎓</button>
   <nav>
     <button id="nav-lib" title="Knihovna">📚 <span class="lbl">Knihovna</span></button>
     <button id="nav-words" title="Slovníček">⭐ <span class="lbl">Slovníček</span></button>
+    <button id="nav-learn" title="Učení">🎓 <span class="lbl">Učení</span></button>
     <button id="nav-settings" title="Vzhled">Aa <span class="lbl">Vzhled</span></button>
   </nav>
 </header>
@@ -242,6 +284,46 @@ h1.pgtitle{font-size:22px;margin:6px 0 0}
     <table id="words-table"><thead><tr><th>Slovo</th><th>Překlad</th><th></th></tr></thead><tbody></tbody></table>
     <div id="empty-words" class="empty" hidden><div>Slovníček je prázdný. Při čtení klikni na slovíčko a ulož si ho tlačítkem ⭐.</div></div>
   </section>
+
+  <!-- UČENÍ -->
+  <section id="view-learn" hidden>
+    <div class="toolbar">
+      <div>
+        <h1 class="pgtitle">Učení</h1>
+        <p class="sub" id="learn-sub">Doplňuj chybějící slova do vět z knihy a procvičuj nepravidelná slovesa. Vidíš jen počet písmen — písmena máš zamíchaná vedle.</p>
+      </div>
+      <button id="btn-learn-exit" style="margin-left:auto" hidden>✕ Ukončit lekci</button>
+    </div>
+
+    <div id="learn-home">
+      <div class="learn-stats" id="learn-stats"></div>
+      <div class="learn-start">
+        <button class="primary" id="btn-lesson-book">🎓 Lekce z knihy</button>
+        <button id="btn-lesson-words">⭐ Lekce ze slovníčku</button>
+        <button id="btn-lesson-verbs">📘 Nepravidelná slovesa</button>
+      </div>
+      <p class="sub" id="learn-hint"></p>
+    </div>
+
+    <div id="learn-run" hidden>
+      <div class="lrn-bar"><div class="lrn-fill" id="lrn-fill"></div></div>
+      <div class="lrn-meta"><span id="lrn-count"></span><span id="lrn-score"></span></div>
+      <div class="lrn-card" id="lrn-card">
+        <div class="lrn-prompt" id="lrn-prompt"></div>
+        <div class="lrn-sent" id="lrn-sent"></div>
+        <div class="lrn-tiles" id="lrn-tiles"></div>
+        <div class="lrn-fb" id="lrn-fb" hidden></div>
+        <div class="lrn-actions">
+          <button id="lrn-hint" title="Odkryje jedno náhodné písmeno">💡 Napovědět písmeno</button>
+          <button id="lrn-reveal" title="Odkryje celé slovo">🔑 Ukázat celé slovo</button>
+          <button id="lrn-speak" class="icon" title="Přehrát výslovnost">🔊</button>
+          <button id="lrn-next" class="primary" style="margin-left:auto">Další →</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="learn-done" hidden></div>
+  </section>
 </main>
 
 <!-- panel slovíčka -->
@@ -298,6 +380,7 @@ h1.pgtitle{font-size:22px;margin:6px 0 0}
   <div class="set-group">
     <label class="head">Ilustrace při čtení</label>
     <button id="btn-ills">Ilustrace: zapnuty</button>
+    <button id="btn-rails" style="margin-top:8px">Obrázky po stranách: zapnuté</button>
   </div>
   <div class="set-group">
     <label class="head">Stínohra na začátku kapitol</label>
@@ -332,9 +415,9 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.5.7';
+const APP_VERSION='1.6.0';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
-let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,shadow:true},
+let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,rails:true,shadow:true},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
 function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}
 function getWords(){return JSON.parse(localStorage.getItem(WORDS_KEY)||'[]');}
@@ -685,7 +768,8 @@ function renderPage(){
   cont.append(p);
  }
  // lišty: kotvené ilustrace stránky; když žádná není, nejbližší z okolí textu
- if(illsOn){
+ // (při railMode()===0 lišty vůbec neplníme — obrázky by se stahovaly zbytečně)
+ if(illsOn&&railMode()>0){
   let railItems=pageItems.slice();
   const two=railMode()===2;
   if(!railItems.length&&pg.length){
@@ -728,6 +812,7 @@ function makeFigure(it){
 }
 function railMode(){
  if(!(state.ills&&state.ills.length>0&&settings.ills!==false))return 0;
+ if(settings.rails===false)return 0; // obrázky jen inline v textu, ne po stranách
  const pw=Math.min(settings.width,window.innerWidth-100);
  if(window.innerWidth>=pw+800)return 2;
  if(window.innerWidth>=pw+460)return 1;
@@ -1008,6 +1093,11 @@ async function openWord(word,sentence){
  showPanel(word);
  const body=$('#panel-body');
  const sTr=sec('Překlad');body.append(sTr);
+ const gn=grammarNotes(word);
+ if(gn.length){
+  const sG=sec('Gramatika');body.append(sG);
+  gn.forEach((n,i)=>{const g=grammarEl(n);if(i)g.style.marginTop='10px';sG.body.append(g);});
+ }
  let sCtx=null;
  if(sentence){sCtx=sec('V této větě');body.append(sCtx);
   const cs=document.createElement('div');cs.className='ctx-sent';cs.textContent=sentence;
@@ -1085,6 +1175,638 @@ function renderWords(){
  }
 }
 
+/* ================= gramatika (kurátorovaná offline data) =================
+   Vysvětlivky vznikají JEN z těchto ručně ověřených tabulek. Heuristiky typu
+   „končí na -ed → pravidelný minulý čas" tu schválně nejsou: u slov jako
+   „naked", „sacred" nebo „hundred" by tvrdily nesmysl a špatná gramatická
+   poučka je v učební aplikaci horší než žádná. */
+const IRREG_VERBS=`be|was (were)|been|být
+bear|bore|borne|nést, snést
+beat|beat|beaten|bít, porazit
+become|became|become|stát se
+begin|began|begun|začít
+bend|bent|bent|ohnout
+bet|bet|bet|vsadit se
+bind|bound|bound|svázat
+bite|bit|bitten|kousnout
+bleed|bled|bled|krvácet
+blow|blew|blown|foukat
+break|broke|broken|rozbít
+breed|bred|bred|chovat, plodit
+bring|brought|brought|přinést
+build|built|built|stavět
+burn|burnt (burned)|burnt (burned)|hořet, spálit
+burst|burst|burst|prasknout
+buy|bought|bought|koupit
+catch|caught|caught|chytit
+choose|chose|chosen|vybrat si
+cling|clung|clung|přilnout, držet se
+come|came|come|přijít
+cost|cost|cost|stát (cenu)
+creep|crept|crept|plížit se
+cut|cut|cut|řezat
+deal|dealt|dealt|jednat, zabývat se
+dig|dug|dug|kopat
+do|did|done|dělat
+draw|drew|drawn|kreslit, táhnout
+dream|dreamt (dreamed)|dreamt (dreamed)|snít
+drink|drank|drunk|pít
+drive|drove|driven|řídit, hnát
+eat|ate|eaten|jíst
+fall|fell|fallen|padat
+feed|fed|fed|krmit
+feel|felt|felt|cítit
+fight|fought|fought|bojovat
+find|found|found|najít
+flee|fled|fled|prchat
+fly|flew|flown|létat
+forbid|forbade|forbidden|zakázat
+forget|forgot|forgotten|zapomenout
+forgive|forgave|forgiven|odpustit
+freeze|froze|frozen|zmrznout
+get|got|got (gotten)|dostat
+give|gave|given|dát
+go|went|gone|jít, jet
+grind|ground|ground|mlít
+grow|grew|grown|růst
+hang|hung|hung|viset, pověsit
+have|had|had|mít
+hear|heard|heard|slyšet
+hide|hid|hidden|schovat (se)
+hit|hit|hit|udeřit, zasáhnout
+hold|held|held|držet
+hurt|hurt|hurt|zranit, bolet
+keep|kept|kept|nechat si, udržet
+kneel|knelt|knelt|klečet
+know|knew|known|vědět, znát
+lay|laid|laid|položit
+lead|led|led|vést
+lean|leant (leaned)|leant (leaned)|naklonit se, opřít
+leap|leapt (leaped)|leapt (leaped)|skočit
+learn|learnt (learned)|learnt (learned)|učit se
+leave|left|left|odejít, nechat
+lend|lent|lent|půjčit (někomu)
+let|let|let|nechat, dovolit
+lie|lay|lain|ležet
+light|lit|lit|zapálit, rozsvítit
+lose|lost|lost|ztratit, prohrát
+make|made|made|dělat, vyrobit
+mean|meant|meant|znamenat, mínit
+meet|met|met|potkat, setkat se
+pay|paid|paid|platit
+put|put|put|položit, dát
+read|read|read|číst (2. a 3. tvar se čte „red")
+ride|rode|ridden|jet (na koni, na kole)
+ring|rang|rung|zvonit
+rise|rose|risen|stoupat, vstát
+run|ran|run|běžet
+say|said|said|říci
+see|saw|seen|vidět
+seek|sought|sought|hledat
+sell|sold|sold|prodat
+send|sent|sent|poslat
+set|set|set|nastavit, položit
+shake|shook|shaken|třást
+shine|shone|shone|svítit, zářit
+shoot|shot|shot|střílet
+show|showed|shown|ukázat
+shrink|shrank|shrunk|srazit se, scvrknout
+shut|shut|shut|zavřít
+sing|sang|sung|zpívat
+sink|sank|sunk|potopit se, klesat
+sit|sat|sat|sedět
+sleep|slept|slept|spát
+slide|slid|slid|klouzat
+smell|smelt (smelled)|smelt (smelled)|vonět, cítit (čichem)
+speak|spoke|spoken|mluvit
+spend|spent|spent|utratit, strávit
+spill|spilt (spilled)|spilt (spilled)|rozlít
+spin|spun|spun|točit se
+spread|spread|spread|rozšířit, rozprostřít
+spring|sprang|sprung|vyskočit
+stand|stood|stood|stát
+steal|stole|stolen|krást
+stick|stuck|stuck|přilepit, uvíznout
+sting|stung|stung|bodnout, píchnout
+strike|struck|struck|udeřit, stávkovat
+swear|swore|sworn|přísahat, klít
+sweep|swept|swept|zametat
+swim|swam|swum|plavat
+swing|swung|swung|houpat se
+take|took|taken|vzít
+teach|taught|taught|učit (někoho)
+tear|tore|torn|trhat
+tell|told|told|říci, vyprávět
+think|thought|thought|myslet
+throw|threw|thrown|házet
+understand|understood|understood|rozumět
+wake|woke|woken|probudit (se)
+wear|wore|worn|nosit (na sobě)
+weep|wept|wept|plakat
+win|won|won|vyhrát
+wind|wound|wound|vinout, natáhnout
+write|wrote|written|psát`.split('\n').map(l=>{
+ const [base,past,pp,cz]=l.split('|');return {base,past,pp,cz};
+});
+
+const IRREG_PLURALS=`child|children|dítě
+man|men|muž
+woman|women|žena
+foot|feet|noha, chodidlo
+tooth|teeth|zub
+goose|geese|husa
+mouse|mice|myš
+louse|lice|veš
+ox|oxen|vůl
+person|people|člověk (lidé)
+knife|knives|nůž
+wife|wives|manželka
+life|lives|život
+leaf|leaves|list
+wolf|wolves|vlk
+thief|thieves|zloděj
+half|halves|polovina
+shelf|shelves|police
+loaf|loaves|bochník
+self|selves|já, vlastní osoba
+calf|calves|tele, lýtko
+scarf|scarves|šála
+sheep|sheep|ovce
+fish|fish|ryba
+deer|deer|jelen, srna`.split('\n').map(l=>{
+ const [sg,pl,cz]=l.split('|');return {sg,pl,cz};
+});
+
+const IRREG_COMPAR=`good|better|best|dobrý
+bad|worse|worst|špatný
+far|farther (further)|farthest (furthest)|daleký
+little|less|least|malý, málo
+many|more|most|mnoho (u počitatelných)
+much|more|most|mnoho (u nepočitatelných)
+old|older (elder)|oldest (eldest)|starý`.split('\n').map(l=>{
+ const [base,comp,sup,cz]=l.split('|');return {base,comp,sup,cz};
+});
+
+const CONTRACTIONS=`won't|will not|nebudu, nebude
+can't|cannot|nemohu, nemůže
+shan't|shall not|nebudu (starší tvar)
+don't|do not|
+doesn't|does not|
+didn't|did not|
+isn't|is not|
+aren't|are not|
+wasn't|was not|
+weren't|were not|
+hasn't|has not|
+haven't|have not|
+hadn't|had not|
+couldn't|could not|
+wouldn't|would not|
+shouldn't|should not|
+mustn't|must not|
+mightn't|might not|
+needn't|need not|
+ain't|am not / is not / are not (hovorově)|
+let's|let us|pojďme
+it's|it is / it has|
+that's|that is|
+there's|there is / there has|
+what's|what is|
+who's|who is / who has|
+he's|he is / he has|
+she's|she is / she has|
+i'm|I am|
+you're|you are|
+we're|we are|
+they're|they are|
+i've|I have|
+you've|you have|
+we've|we have|
+they've|they have|
+i'll|I will|
+we'll|we will|
+you'll|you will|
+he'll|he will|
+they'll|they will|
+i'd|I would / I had|
+he'd|he would / he had|
+she'd|she would / she had|
+we'd|we would / we had|
+they'd|they would / they had|
+o'clock|of the clock|hodin`.split('\n').map(l=>{
+ const [short,full,cz]=l.split('|');return {short,full,cz};
+});
+
+const VERB_BY_FORM=new Map();
+IRREG_VERBS.forEach(v=>{
+ const add=(w,role)=>{
+  w=w.toLowerCase();
+  let arr=VERB_BY_FORM.get(w);if(!arr){arr=[];VERB_BY_FORM.set(w,arr);}
+  const e=arr.find(x=>x.v===v);
+  if(e){if(!e.roles.includes(role))e.roles.push(role);}
+  else arr.push({v,roles:[role]});
+ };
+ add(v.base,'base');
+ (v.past.match(/[a-z]+/g)||[]).forEach(w=>add(w,'past'));
+ (v.pp.match(/[a-z]+/g)||[]).forEach(w=>add(w,'pp'));
+});
+const PLURAL_BY_FORM=new Map();
+IRREG_PLURALS.forEach(p=>{PLURAL_BY_FORM.set(p.sg,{p,role:'sg'});
+ if(p.pl!==p.sg)PLURAL_BY_FORM.set(p.pl,{p,role:'pl'});});
+const COMPAR_BY_FORM=new Map();
+IRREG_COMPAR.forEach(c=>{
+ const add=(s,role)=>(s.match(/[a-z]+/g)||[]).forEach(w=>{
+  if(!COMPAR_BY_FORM.has(w))COMPAR_BY_FORM.set(w,{c,role});});
+ add(c.base,'base');add(c.comp,'comp');add(c.sup,'sup');
+});
+const CONTR_BY_FORM=new Map();
+CONTRACTIONS.forEach(c=>CONTR_BY_FORM.set(c.short,c));
+
+const ROLE_CZ={base:'základní tvar (1. tvar, infinitiv)',past:'minulý čas (2. tvar)',
+ pp:'příčestí minulé (3. tvar)'};
+
+function normWord(w){return w.toLowerCase().replace(/[’´`]/g,"'").replace(/^['-]+|['-]+$/g,'');}
+
+/* Vrací pole gramatických poznámek k danému slovu (může být prázdné). */
+function grammarNotes(word){
+ const w=normWord(word||'');
+ if(!w)return[];
+ const out=[];
+ (VERB_BY_FORM.get(w)||[]).slice(0,2).forEach(e=>out.push({kind:'verb',v:e.v,roles:e.roles,form:w}));
+ const pl=PLURAL_BY_FORM.get(w);if(pl)out.push({kind:'plural',p:pl.p,role:pl.role,form:w});
+ const cp=COMPAR_BY_FORM.get(w);if(cp)out.push({kind:'compar',c:cp.c,role:cp.role,form:w});
+ const ct=CONTR_BY_FORM.get(w);if(ct)out.push({kind:'contr',c:ct,form:w});
+ return out;
+}
+
+function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;
+ if(txt!==undefined)e.textContent=txt;return e;}
+
+/* Řádek tvarů, kde je hledaný tvar zvýrazněný. */
+function formsLine(parts,form){
+ const d=el('div','forms');
+ parts.forEach((p,i)=>{
+  if(i)d.append(' – ');
+  const hit=(p.match(/[a-z]+/g)||[]).some(x=>x===form);
+  d.append(hit?el('i',null,p):document.createTextNode(p));
+ });
+ return d;
+}
+
+function grammarEl(n){
+ const box=el('div','gram-note');
+ if(n.kind==='verb'){
+  const head=el('div');
+  head.append(el('strong',null,n.form),document.createTextNode(' — '+
+   n.roles.map(r=>ROLE_CZ[r]).join(' i ')+' nepravidelného slovesa '));
+  head.append(el('strong',null,n.v.base));
+  box.append(head,formsLine([n.v.base,n.v.past,n.v.pp],n.form),el('div','pos-cz',n.v.cz));
+ }else if(n.kind==='plural'){
+  const head=el('div');
+  head.append(el('strong',null,n.form),document.createTextNode(n.role==='pl'
+   ? ' — nepravidelné množné číslo' : ' — jednotné číslo s nepravidelným množným'));
+  box.append(head,formsLine([n.p.sg,n.p.pl],n.form),el('div','pos-cz',n.p.cz));
+ }else if(n.kind==='compar'){
+  const r={base:'základní tvar',comp:'2. stupeň (komparativ)',sup:'3. stupeň (superlativ)'}[n.role];
+  const head=el('div');
+  head.append(el('strong',null,n.form),document.createTextNode(' — '+r+
+   ', stupňuje se nepravidelně'));
+  box.append(head,formsLine([n.c.base,n.c.comp,n.c.sup],n.form),el('div','pos-cz',n.c.cz));
+ }else{
+  const head=el('div');
+  head.append(el('strong',null,n.c.short),document.createTextNode(' — stažený tvar pro '));
+  head.append(el('strong',null,n.c.full));
+  box.append(head);
+  if(n.c.cz)box.append(el('div','pos-cz',n.c.cz));
+ }
+ return box;
+}
+
+/* ================= učení ================= */
+const LEARN_KEY='petrus-learn';
+const BOX_DAYS=[0,1,3,7,21,60];
+function getLearn(){
+ return Object.assign({items:{},day:'',doneToday:0,streak:0,total:0},
+  JSON.parse(localStorage.getItem(LEARN_KEY)||'{}'));
+}
+function setLearn(l){try{localStorage.setItem(LEARN_KEY,JSON.stringify(l));}catch(e){}}
+function dayStr(ms){return new Date(ms).toISOString().slice(0,10);}
+function learnGrade(key,ok){
+ const l=getLearn(),now=Date.now();
+ const it=l.items[key]||{box:0,seen:0,ok:0,bad:0,due:0};
+ it.seen++;
+ if(ok){it.ok++;it.box=Math.min(BOX_DAYS.length-1,it.box+1);}else{it.bad++;it.box=1;}
+ it.due=now+BOX_DAYS[it.box]*864e5;it.last=now;
+ l.items[key]=it;
+ const today=dayStr(now);
+ if(l.day!==today){
+  l.streak=(l.day===dayStr(now-864e5)?l.streak:0)+1;
+  l.day=today;l.doneToday=0;
+ }
+ l.doneToday++;l.total=(l.total||0)+1;
+ setLearn(l);
+}
+function dueCount(){
+ const l=getLearn(),now=Date.now();
+ return Object.values(l.items).filter(i=>i.due<=now).length;
+}
+function shuffle(a){
+ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+ return a;
+}
+
+/* Slova, která do doplňovačky nemá smysl vybírat (nesou málo významu). */
+const CLOZE_STOP=new Set(('a an the and or but if of to in on at by for with from as into onto upon '+
+ 'is are was were be been being am do does did have has had he she it they we you his her its their '+
+ 'our your him them her hers theirs mine yours myself himself herself itself themselves '+
+ 'not no nor so that this these those there here then than when what which who whom whose how why '+
+ 'all any some such very just only also again more most other another each every both few many much '+
+ 'own same too can could will would shall should may might must let up down out off over under '+
+ 'after before while during about because though although until since where whether said says '+
+ 'one two three now still even ever never always well back away').split(' '));
+
+function pickCloze(sent,used){
+ const re=/[A-Za-z][A-Za-z'’-]*/g;let m,best=null;
+ const saved=getWords().map(x=>x.w.toLowerCase());
+ while((m=re.exec(sent))){
+  const raw=m[0],w=raw.toLowerCase();
+  if(w.length<4||w.length>12)continue;
+  if(!/^[a-z]+$/.test(w))continue;
+  if(CLOZE_STOP.has(w)||used.has(w))continue;
+  if(m.index>0&&/[A-Z]/.test(raw[0]))continue; // vlastní jméno uprostřed věty
+  let score=w.length>=7?2:1;
+  if(saved.includes(w))score+=6;
+  if(VERB_BY_FORM.has(w))score+=3;
+  if(!best||score>best.score)best={raw,w,start:m.index,end:m.index+raw.length,score};
+ }
+ return best;
+}
+function verbTask(v){
+ const opts=[];
+ if(/^[a-z]+$/.test(v.past))opts.push({role:'past',ans:v.past});
+ if(/^[a-z]+$/.test(v.pp)&&v.pp!==v.past)opts.push({role:'pp',ans:v.pp});
+ if(!opts.length)return null;
+ const o=opts[Math.floor(Math.random()*opts.length)];
+ return {type:'verb',key:'g:'+v.base+':'+o.role,answer:o.ans,verb:v,role:o.role};
+}
+function lessonSentences(){
+ const out=[];
+ if(!state.pages.length)return out;
+ state.pages.slice(state.page,state.page+4).forEach(pg=>pg.forEach(par=>
+  par.sentences.forEach(s=>out.push(s.trim()))));
+ return out.filter(s=>s.length>=40&&s.length<=240);
+}
+function buildBookLesson(){
+ const pool=lessonSentences(),tasks=[],used=new Set();
+ for(const s of pool){
+  if(tasks.length>=8)break;
+  const c=pickCloze(s,used);
+  if(!c)continue;
+  used.add(c.w);
+  tasks.push({type:'cloze',key:'w:'+c.w,answer:c.w,sent:s,start:c.start,end:c.end});
+ }
+ const verbs=[];
+ for(const s of pool){
+  const re=/[A-Za-z]+/g;let m;
+  while((m=re.exec(s))){
+   const e=(VERB_BY_FORM.get(m[0].toLowerCase())||[])[0];
+   if(e&&!verbs.some(x=>x.base===e.v.base))verbs.push(e.v);
+  }
+ }
+ shuffle(verbs).slice(0,2).forEach(v=>{const t=verbTask(v);if(t)tasks.push(t);});
+ return shuffle(tasks);
+}
+function buildWordsLesson(){
+ const l=getLearn();
+ const words=getWords().filter(w=>/^[a-z]+$/i.test(w.w)&&w.w.length>=3&&w.w.length<=12&&w.tr);
+ words.sort((a,b)=>{
+  const ia=l.items['w:'+a.w.toLowerCase()],ib=l.items['w:'+b.w.toLowerCase()];
+  return (ia?ia.due:0)-(ib?ib.due:0);
+ });
+ return words.slice(0,10).map(w=>({type:'wordtr',key:'w:'+w.w.toLowerCase(),
+  answer:w.w.toLowerCase(),cz:w.tr,sent:(state.current?findOccurrences(w.w,'')[0]:'')||''}));
+}
+function buildVerbsLesson(){
+ const l=getLearn(),now=Date.now();
+ const cand=shuffle(IRREG_VERBS.slice()).map(v=>{
+  const due=Math.min(...['g:'+v.base+':past','g:'+v.base+':pp']
+   .map(k=>l.items[k]?l.items[k].due:0));
+  return {v,due};
+ }).filter(x=>x.due<=now);
+ cand.sort((a,b)=>a.due-b.due);
+ const out=[];
+ for(const x of cand){const t=verbTask(x.v);if(t)out.push(t);if(out.length>=10)break;}
+ return out;
+}
+
+let lrn={tasks:[],i:0,ok:0,slots:[],pool:[],phase:'idle',mistakes:0};
+function learnRunning(){return lrn.phase!=='idle'&&lrn.i<lrn.tasks.length;}
+
+function renderLearnHome(){
+ const l=getLearn(),due=dueCount();
+ const box=$('#learn-stats');box.innerHTML='';
+ const add=(n,lbl)=>{const d=el('div','st');d.append(el('b',null,String(n)),el('span',null,lbl));box.append(d);};
+ add(Object.keys(l.items).length,'položek v učení');
+ add(due,'k opakování');
+ add(l.day===dayStr(Date.now())?l.doneToday:0,'dnes hotovo');
+ add(l.day===dayStr(Date.now())?l.streak:0,'dní v řadě');
+ const hint=$('#learn-hint');
+ const parts=[];
+ parts.push(state.current
+  ? 'Lekce z knihy bere věty z místa, kde právě čteš („'+state.current.title+'“).'
+  : 'Lekce z knihy je dostupná, až otevřeš nějakou knihu ve čtečce.');
+ const wc=getWords().filter(w=>w.tr).length;
+ parts.push(wc?('Ve slovníčku máš '+wc+' slovíček s překladem.')
+  :'Slovníček je zatím prázdný — při čtení si slovíčka ukládej tlačítkem ⭐.');
+ hint.textContent=parts.join(' ');
+ $('#btn-lesson-book').disabled=!state.current;
+ $('#btn-lesson-words').disabled=wc===0;
+}
+function endLesson(){
+ lrn={tasks:[],i:0,ok:0,slots:[],pool:[],phase:'idle',mistakes:0};
+ $('#learn-run').hidden=true;$('#learn-done').hidden=true;
+ $('#btn-learn-exit').hidden=true;$('#learn-home').hidden=false;
+ renderLearnHome();
+}
+function startLesson(tasks,intro){
+ if(!tasks||!tasks.length){toast(intro||'Pro tuhle lekci se nenašel materiál.');return;}
+ lrn={tasks,i:0,ok:0,slots:[],pool:[],phase:'input',mistakes:0};
+ $('#learn-home').hidden=true;$('#learn-done').hidden=true;
+ $('#learn-run').hidden=false;$('#btn-learn-exit').hidden=false;
+ renderTask();
+}
+function slotsEl(){
+ const wrap=el('span','lrn-slots');
+ lrn.slotEls=lrn.slots.map((_,i)=>{
+  const s=el('span','slot');s.onclick=()=>freeSlot(i);wrap.append(s);return s;
+ });
+ return wrap;
+}
+function renderTiles(){
+ const box=$('#lrn-tiles');box.innerHTML='';
+ lrn.pool.forEach((t,i)=>{
+  const b=el('button','tile'+(t.used?' used':''),t.ch);
+  b.onclick=()=>placeTile(i);
+  box.append(b);
+ });
+}
+function syncSlots(){
+ lrn.slotEls.forEach((s,i)=>{
+  const v=lrn.slots[i];
+  s.textContent=v?v.ch:'';
+  s.classList.toggle('filled',!!v);
+ });
+}
+function placeTile(i){
+ if(lrn.phase!=='input')return;
+ const t=lrn.pool[i];if(!t||t.used)return;
+ const free=lrn.slots.indexOf(null);
+ if(free<0)return;
+ t.used=true;lrn.slots[free]={ch:t.ch,tile:i};
+ renderTiles();syncSlots();
+ if(lrn.slots.every(Boolean))checkAnswer();
+}
+function freeSlot(i){
+ if(lrn.phase!=='input')return;
+ const v=lrn.slots[i];if(!v)return;
+ lrn.pool[v.tile].used=false;lrn.slots[i]=null;
+ renderTiles();syncSlots();
+}
+function clearSlots(){
+ lrn.slots=lrn.slots.map(()=>null);
+ lrn.pool.forEach(t=>t.used=false);
+ renderTiles();syncSlots();
+}
+function typeLetter(ch){
+ if(lrn.phase!=='input')return;
+ const i=lrn.pool.findIndex(t=>!t.used&&t.ch===ch);
+ if(i>=0)placeTile(i);
+}
+function backspace(){
+ if(lrn.phase!=='input')return;
+ for(let i=lrn.slots.length-1;i>=0;i--)if(lrn.slots[i]){freeSlot(i);return;}
+}
+function renderTask(){
+ const t=lrn.tasks[lrn.i];
+ lrn.phase='input';lrn.mistakes=0;
+ $('#lrn-card').className='lrn-card';
+ const fb=$('#lrn-fb');fb.hidden=true;fb.innerHTML='';fb.className='lrn-fb';
+ $('#lrn-fill').style.width=Math.round(lrn.i/lrn.tasks.length*100)+'%';
+ $('#lrn-count').textContent='Úkol '+(lrn.i+1)+' z '+lrn.tasks.length;
+ $('#lrn-score').textContent='Správně na první pokus: '+lrn.ok;
+ const prompt=$('#lrn-prompt'),sent=$('#lrn-sent');
+ prompt.innerHTML='';sent.innerHTML='';
+ const letters=t.answer.split('');
+ lrn.slots=letters.map(()=>null);
+ lrn.pool=letters.map(ch=>({ch,used:false}));
+ if(letters.length>1){
+  let guard=0;
+  do{shuffle(lrn.pool);}
+  while(lrn.pool.map(x=>x.ch).join('')===t.answer&&++guard<20);
+ }
+ if(t.type==='cloze'){
+  prompt.textContent='Doplň chybějící slovo do věty:';
+  sent.append(document.createTextNode(t.sent.slice(0,t.start)),slotsEl(),
+   document.createTextNode(t.sent.slice(t.end)));
+ }else if(t.type==='verb'){
+  prompt.append(document.createTextNode('Jaký je '));
+  prompt.append(el('b',null,t.role==='past'?'minulý čas (2. tvar)':'příčestí minulé (3. tvar)'));
+  prompt.append(document.createTextNode(' slovesa '));
+  prompt.append(el('b',null,t.verb.base));
+  prompt.append(document.createTextNode(' — '+t.verb.cz+'?'));
+  sent.append(slotsEl());
+ }else{
+  prompt.append(document.createTextNode('Jak se anglicky řekne '));
+  prompt.append(el('b',null,t.cz));
+  prompt.append(document.createTextNode('?'));
+  sent.append(slotsEl());
+ }
+ renderTiles();syncSlots();
+ $('#lrn-hint').hidden=false;$('#lrn-reveal').hidden=false;$('#lrn-speak').hidden=true;
+ $('#lrn-next').textContent='Přeskočit →';
+}
+function checkAnswer(){
+ const t=lrn.tasks[lrn.i];
+ const guess=lrn.slots.map(s=>s.ch).join('');
+ if(guess===t.answer){solved(true);return;}
+ lrn.mistakes++;
+ const card=$('#lrn-card');card.classList.add('bad');
+ setTimeout(()=>{card.classList.remove('bad');clearSlots();},420);
+}
+function fillAnswer(){
+ const t=lrn.tasks[lrn.i];
+ clearSlots();
+ t.answer.split('').forEach((ch,i)=>{
+  const p=lrn.pool.findIndex(x=>!x.used&&x.ch===ch);
+  if(p>=0){lrn.pool[p].used=true;lrn.slots[i]={ch,tile:p};}
+ });
+ renderTiles();syncSlots();
+}
+function solved(byUser){
+ const t=lrn.tasks[lrn.i];
+ lrn.phase='done';
+ fillAnswer();
+ const first=byUser&&lrn.mistakes===0;
+ if(first)lrn.ok++;
+ learnGrade(t.key,first);
+ $('#lrn-card').classList.add('ok');
+ $('#lrn-score').textContent='Správně na první pokus: '+lrn.ok;
+ $('#lrn-hint').hidden=true;$('#lrn-reveal').hidden=true;$('#lrn-speak').hidden=false;
+ $('#lrn-next').textContent=lrn.i+1>=lrn.tasks.length?'Dokončit lekci':'Další →';
+ const fb=$('#lrn-fb');fb.hidden=false;
+ fb.className='lrn-fb '+(first?'ok':'bad');
+ const head=el('div');
+ head.append(document.createTextNode(first?'Správně! ':(byUser?'Správně, ale až na další pokus. ':'Řešení: ')));
+ head.append(el('strong',null,t.answer));
+ fb.append(head);
+ if(t.type==='wordtr'&&t.sent){
+  const s=el('div','pos-cz','V knize: '+t.sent);s.style.marginTop='8px';fb.append(s);
+ }
+ if(t.type==='cloze'){
+  const tr=el('div','pos-cz','Překlad slova… ');tr.style.marginTop='8px';fb.append(tr);
+  const want=lrn.i;
+  translate(t.answer).then(r=>{
+   if(lrn.i!==want||lrn.phase!=='done')return;
+   tr.textContent='Překlad: '+r.main;
+  }).catch(()=>{tr.remove();});
+ }
+ // Poznámky k odpovědi; u sloves je mezi nimi i celá trojice tvarů,
+ // takže se tu nic dalšího nepřidává (jinak by se řádek tvarů zdvojil).
+ const notes=grammarNotes(t.answer);
+ if(t.type==='verb'&&!notes.some(n=>n.kind==='verb'&&n.v===t.verb))
+  notes.unshift({kind:'verb',v:t.verb,roles:[t.role],form:t.answer});
+ notes.forEach(n=>{const g=grammarEl(n);g.style.marginTop='10px';fb.append(g);});
+}
+function nextTask(){
+ if(lrn.phase==='input'){ // přeskočeno bez odpovědi
+  const t=lrn.tasks[lrn.i];learnGrade(t.key,false);
+ }
+ lrn.i++;
+ if(lrn.i>=lrn.tasks.length)finishLesson();else renderTask();
+}
+function finishLesson(){
+ const total=lrn.tasks.length,ok=lrn.ok;
+ lrn.phase='idle';
+ $('#learn-run').hidden=true;$('#btn-learn-exit').hidden=true;
+ const d=$('#learn-done');d.hidden=false;d.innerHTML='';
+ d.append(el('div','big',ok===total?'🏆':(ok>=total*0.6?'🎉':'💪')));
+ d.append(el('div',null,'Hotovo — '+ok+' z '+total+' na první pokus.'));
+ const l=getLearn();
+ d.append(el('p','sub','Položek v učení: '+Object.keys(l.items).length+
+  ' · dnes hotovo: '+l.doneToday+' · dní v řadě: '+l.streak));
+ const row=el('div','row');
+ const again=el('button','primary','🎓 Další lekce');
+ again.onclick=()=>{d.hidden=true;$('#learn-home').hidden=false;renderLearnHome();};
+ row.append(again);
+ if(state.current){
+  const back=el('button',null,'📖 Zpět ke čtení');
+  back.onclick=()=>{d.hidden=true;$('#learn-home').hidden=false;show('reader');};
+  row.append(back);
+ }
+ d.append(row);
+ lrn.tasks=[];lrn.i=0;
+}
+
 /* ================= vzhled ================= */
 function applySettings(){
  document.body.dataset.theme=settings.theme;
@@ -1104,6 +1826,10 @@ function applySettings(){
  $('#rng-lh').value=Math.round(settings.lh*10);$('#lh-val').textContent=settings.lh;
  const bi=$('#btn-ills');bi.classList.toggle('sel',settings.ills!==false);
  bi.textContent=settings.ills!==false?'Ilustrace: zapnuty':'Ilustrace: vypnuty';
+ const br=$('#btn-rails');
+ br.classList.toggle('sel',settings.rails!==false);
+ br.textContent=settings.rails!==false?'Obrázky po stranách: zapnuté':'Obrázky po stranách: vypnuté';
+ br.disabled=settings.ills===false;
  const bs=$('#btn-shadow');bs.classList.toggle('sel',settings.shadow!==false);
  bs.textContent=settings.shadow!==false?'Stínohra: zapnuta':'Stínohra: vypnuta';
  $('#frieze').hidden=$('#view-library').hidden||settings.shadow===false;
@@ -1116,12 +1842,19 @@ function show(view){
  $('#view-library').hidden=view!=='library';
  $('#view-reader').hidden=view!=='reader';
  $('#view-words').hidden=view!=='words';
+ $('#view-learn').hidden=view!=='learn';
  $('#btn-back').hidden=view!=='reader';
+ $('#btn-learn').hidden=view!=='reader';
  $('#btn-reills').hidden=view!=='reader'||!!(state.current&&state.current.builtin);
  $('#book-title').textContent=view==='reader'&&state.current?state.current.title:'';
  if(view!=='reader')closePanel();
  if(view==='library')renderLibrary();
  if(view==='words')renderWords();
+ if(view==='learn'&&!learnRunning()){
+  $('#learn-run').hidden=true;$('#btn-learn-exit').hidden=true;
+  if($('#learn-done').hidden)$('#learn-home').hidden=false;
+  renderLearnHome();
+ }
 }
 
 /* ================= události ================= */
@@ -1129,7 +1862,37 @@ $('#btn-upload').onclick=()=>$('#file-input').click();
 $('#file-input').onchange=e=>{handleFiles([...e.target.files]);e.target.value='';};
 $('#nav-lib').onclick=()=>show('library');
 $('#nav-words').onclick=()=>show('words');
+$('#nav-learn').onclick=()=>show('learn');
 $('#btn-back').onclick=()=>show('library');
+$('#btn-learn').onclick=()=>{
+ show('learn');
+ startLesson(buildBookLesson(),'Na téhle části knihy se nenašla vhodná slova — zkus to o kus dál.');
+};
+$('#btn-learn-exit').onclick=endLesson;
+$('#btn-lesson-book').onclick=()=>startLesson(buildBookLesson(),
+ 'Na téhle části knihy se nenašla vhodná slova — zkus to o kus dál.');
+$('#btn-lesson-words').onclick=()=>startLesson(buildWordsLesson(),
+ 'Ve slovníčku zatím nejsou slovíčka s překladem.');
+$('#btn-lesson-verbs').onclick=()=>startLesson(buildVerbsLesson(),
+ 'Všechna slovesa máš na dnešek zopakovaná — vrať se zítra.');
+$('#lrn-next').onclick=nextTask;
+$('#lrn-reveal').onclick=()=>{if(lrn.phase==='input')solved(false);};
+/* Nápověda = jedno NÁHODNÉ dosud nesprávné písmeno (ne vždy první),
+   celé slovo odkryje až vedlejší „Ukázat řešení". */
+$('#lrn-hint').onclick=()=>{
+ if(lrn.phase!=='input')return;
+ const t=lrn.tasks[lrn.i];
+ const cand=[];
+ lrn.slots.forEach((s,k)=>{if(!s||s.ch!==t.answer[k])cand.push(k);});
+ if(!cand.length)return;
+ const i=cand[Math.floor(Math.random()*cand.length)];
+ lrn.mistakes++;
+ if(lrn.slots[i])freeSlot(i);
+ const p=lrn.pool.findIndex(x=>!x.used&&x.ch===t.answer[i]);
+ if(p>=0){lrn.pool[p].used=true;lrn.slots[i]={ch:t.answer[i],tile:p};renderTiles();syncSlots();}
+ if(lrn.slots.every(Boolean))checkAnswer();
+};
+$('#lrn-speak').onclick=()=>{const t=lrn.tasks[lrn.i];if(t)speak(t.answer);};
 $('#btn-reills').onclick=retryContentIllustrations;
 $('.brand').onclick=()=>show('library');
 $('#nav-settings').onclick=()=>{$('#settings').hidden=!$('#settings').hidden;};
@@ -1195,6 +1958,11 @@ selbtn.onclick=()=>{openSelection(selbtn.dataset.text||'');selbtn.hidden=true;
 
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape'&&!$('#shadowplay').hidden){closeShadow();return;}
+ if(!$('#view-learn').hidden&&!$('#learn-run').hidden&&!e.target.matches('input,textarea')){
+  if(e.key==='Enter'){e.preventDefault();nextTask();return;}
+  if(e.key==='Backspace'){e.preventDefault();backspace();return;}
+  if(/^[a-zA-Z]$/.test(e.key)){e.preventDefault();typeLetter(e.key.toLowerCase());return;}
+ }
  if(e.key==='Escape'&&!$('#lightbox').hidden){$('#lightbox').hidden=true;return;}
  if(!$('#view-reader').hidden&&!e.target.matches('input,textarea')){
   if(e.key==='ArrowRight')gotoPage(state.page+1);
@@ -1225,6 +1993,10 @@ $('#rng-size').oninput=e=>{settings.size=+e.target.value;saveSettings();applySet
 $('#btn-bold').onclick=()=>{settings.bold=!settings.bold;saveSettings();applySettings();};
 $('#btn-ills').onclick=()=>{
  settings.ills=settings.ills===false;saveSettings();applySettings();
+ if(state.current)renderPage();
+};
+$('#btn-rails').onclick=()=>{
+ settings.rails=settings.rails===false;saveSettings();applySettings();
  if(state.current)renderPage();
 };
 $('#btn-shadow').onclick=()=>{
