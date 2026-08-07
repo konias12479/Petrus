@@ -182,7 +182,14 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   i stránka s jen jedním vlastním obrázkem doplní o nejbližší další
   z knihy, ať druhá lišta nezůstane prázdná zbytečně — bez knihy
   s víc ilustracemi (jen jedna v celé knize) se nic nezdvojuje, druhá
-  lišta prostě zůstane prázdná. Klik = lightbox (`#lightbox`), Escape/klik zavírá.
+  lišta prostě zůstane prázdná. Od v1.5.6 mají `figure.ill img` (inline
+  i v liště) natrvalo stejný „stínohra" filtr jako přechodový overlay —
+  `grayscale+contrast` + `mix-blend-mode:multiply` + radiální mask-image
+  (jemnější než u `.sp-sil`, ať zůstane čitelný obsah) — místo dřívějšího
+  bílého fotorámečku; sjednocuje to vzhled skenů (Tenniel/Denslow/Paget)
+  i barevných fotek z Wikimedia Commons u nahraných knih. `#lightbox img`
+  má vlastní selektor bez filtru — zvětšený náhled zůstává plnobarevný.
+  Klik = lightbox (`#lightbox`), Escape/klik zavírá.
   Přepínač `settings.ills` v zásuvce vzhledu. Knihy s manifestem
   mají v `BUILTIN_BOOKS` příznak `ills:true` (jinak se fetch nedělá).
 - **Stínohra kapitol:** při přechodu na stránku s nadpisem kapitoly
