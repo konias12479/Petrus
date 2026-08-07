@@ -450,7 +450,7 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.7.1';
+const APP_VERSION='1.7.2';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
 let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,rails:true,shadow:true},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
@@ -1751,8 +1751,8 @@ function renderTask(){
  }
  if(t.type==='cloze'){
   prompt.textContent='Doplň chybějící slovo do věty:';
-  sent.append(document.createTextNode(t.sent.slice(0,t.start)),slotsEl(),
-   document.createTextNode(t.sent.slice(t.end)));
+  sent.append(renderSentenceEl(t.sent.slice(0,t.start)),slotsEl(),
+   renderSentenceEl(t.sent.slice(t.end)));
  }else if(t.type==='verb'){
   prompt.append(document.createTextNode('Jaký je '));
   prompt.append(el('b',null,t.role==='past'?'minulý čas (2. tvar)':'příčestí minulé (3. tvar)'));
@@ -1989,15 +1989,31 @@ $('#page-content').addEventListener('click',e=>{
  openWord(w.textContent,sent?sent.textContent:'');
 });
 
+$('#lrn-sent').addEventListener('click',e=>{
+ const w=e.target.closest('.w');
+ if(!w)return;
+ const selTxt=(window.getSelection()+'').trim();
+ if(selTxt&&selTxt!==w.textContent)return;
+ $$('.w.active').forEach(el=>el.classList.remove('active'));
+ w.classList.add('active');
+ const t=lrn.tasks[lrn.i];
+ // u doplňovačky nikdy neposílej celou (neblanknutou) větu do kontextu —
+ // prozradila by hledané slovo v sekci „V této větě"
+ const ctx=t&&t.type==='cloze'?t.sent.slice(0,t.start)+'…'+t.sent.slice(t.end):'';
+ openWord(w.textContent,ctx);
+});
+
 /* výběr textu → plovoucí tlačítko */
 const selbtn=$('#selbtn');
 function checkSelection(){
  const sel=window.getSelection();
  const txt=(sel+'').trim();
- if(!txt||txt.length<2||txt.length>800||$('#view-reader').hidden){selbtn.hidden=true;return;}
+ if(!txt||txt.length<2||txt.length>800){selbtn.hidden=true;return;}
  if(!sel.rangeCount)return;
  const range=sel.getRangeAt(0);
- if(!$('#page-content').contains(range.commonAncestorContainer)){selbtn.hidden=true;return;}
+ const inReader=!$('#view-reader').hidden&&$('#page-content').contains(range.commonAncestorContainer);
+ const inLearn=!$('#view-learn').hidden&&$('#lrn-sent').contains(range.commonAncestorContainer);
+ if(!inReader&&!inLearn){selbtn.hidden=true;return;}
  const r=range.getBoundingClientRect();
  selbtn.style.left=Math.max(8,window.scrollX+r.left+r.width/2-60)+'px';
  selbtn.style.top=(window.scrollY+r.bottom+8)+'px';
