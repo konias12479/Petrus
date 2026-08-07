@@ -450,7 +450,7 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.7.2';
+const APP_VERSION='1.7.3';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
 let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,rails:true,shadow:true},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
@@ -511,6 +511,13 @@ async function fetchDefinition(word){
    defs:(m.definitions||[]).slice(0,2).map(x=>({d:x.definition,ex:x.example||''}))}))};
  cachePut(key,res);
  return res;
+}
+async function findExampleSentence(word){
+ try{
+  const df=await fetchDefinition(word);
+  for(const m of df.meanings)for(const d of m.defs)if(d.ex)return d.ex;
+ }catch(e){}
+ return null;
 }
 function speak(text){
  try{const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=0.95;
@@ -1806,6 +1813,12 @@ function solved(byUser){
  fb.append(head);
  if(t.type==='wordtr'&&t.sent){
   const s=el('div','pos-cz','V knize: '+t.sent);s.style.marginTop='8px';fb.append(s);
+  const tr=el('div','pos-cz','Překládám větu… ');tr.style.marginTop='4px';fb.append(tr);
+  const want=lrn.i;
+  translate(t.sent).then(r=>{
+   if(lrn.i!==want||lrn.phase!=='done')return;
+   tr.textContent='→ '+r.main;
+  }).catch(()=>{tr.remove();});
  }
  if(t.type==='cloze'){
   const tr=el('div','pos-cz','Překlad slova… ');tr.style.marginTop='8px';fb.append(tr);
@@ -1814,6 +1827,23 @@ function solved(byUser){
    if(lrn.i!==want||lrn.phase!=='done')return;
    tr.textContent='Překlad: '+r.main;
   }).catch(()=>{tr.remove();});
+ }
+ // slovesa a slovíčka bez vlastní věty z knihy — dohledej reálný příklad
+ // použití ve slovníku (dictionaryapi.dev), ne u vymyšlené věty
+ if(t.type==='verb'||(t.type==='wordtr'&&!t.sent)){
+  const want=lrn.i;
+  const primary=t.answer,fallback=t.type==='verb'?t.verb.base:null;
+  (async()=>{
+   let sentence=await findExampleSentence(primary);
+   if(!sentence&&fallback)sentence=await findExampleSentence(fallback);
+   if(lrn.i!==want||lrn.phase!=='done'||!sentence)return;
+   const s=el('div','pos-cz',sentence);s.style.marginTop='8px';s.style.fontStyle='italic';fb.append(s);
+   const tr=el('div','pos-cz','Překládám větu… ');tr.style.marginTop='4px';fb.append(tr);
+   translate(sentence).then(r=>{
+    if(lrn.i!==want||lrn.phase!=='done')return;
+    tr.textContent='→ '+r.main;
+   }).catch(()=>{tr.remove();});
+  })();
  }
  // Poznámky k odpovědi; u sloves je mezi nimi i celá trojice tvarů,
  // takže se tu nic dalšího nepřidává (jinak by se řádek tvarů zdvojil).
