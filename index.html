@@ -325,7 +325,7 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.5.4';
+const APP_VERSION='1.5.5';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
 let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,shadow:true},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
@@ -475,36 +475,46 @@ async function findCoverUrl(title,paragraphs){
    }
   }catch(e){}
  }
- const clean=title.replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim();
- const q=encodeURIComponent(clean);
- const localNorm=normTitle(clean);
- // Krátké/obecné názvy (např. „48") jsou u vyhledávání podle názvu
- // nejednoznačné — bez přesné shody radši žádná obálka než špatná.
- const trustTop=localNorm.length>=8;
- try{
-  const r=await fetch('https://www.googleapis.com/books/v1/volumes?q=intitle:'+q+'&maxResults=10&fields=items(volumeInfo(title,imageLinks))');
-  if(r.ok){
-   const j=await r.json();
-   const items=(j.items||[]).filter(it=>{
-    const l=it.volumeInfo&&it.volumeInfo.imageLinks;
-    return l&&(l.thumbnail||l.smallThumbnail);
-   });
-   const pick=items.find(it=>normTitle(it.volumeInfo.title)===localNorm)||(trustTop?items[0]:null);
-   if(pick){
-    const l=pick.volumeInfo.imageLinks;
-    return (l.thumbnail||l.smallThumbnail).replace(/^http:/,'https:');
+ // Soubory z e-čteček mívají tvar „Název-Autor" nebo „Název_Autor_Jméno":
+ // pomlčka obvykle odděluje název od autora, podtržítko jen nahrazuje
+ // mezery uvnitř slov/jmen. Nejdřív zkusit jen část před (poslední)
+ // pomlčkou, ať se jméno autora nepřimíchá do intitle: dotazu a nepokazí
+ // shodu (viz „The_Incredible_Journey-Burnford_Sheila" → bez rozdělení
+ // by se hledalo „The Incredible Journey Burnford Sheila").
+ const segs=title.split(/\s+-\s+|-(?=[A-Z])/).map(s=>s.replace(/_+/g,' ').replace(/\s+/g,' ').trim()).filter(Boolean);
+ const full=title.replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim();
+ const candidates=segs.length>1?[...new Set([segs[0],full])]:[full];
+ for(const clean of candidates){
+  const q=encodeURIComponent(clean);
+  const localNorm=normTitle(clean);
+  // Krátké/obecné názvy (např. „48") jsou u vyhledávání podle názvu
+  // nejednoznačné — bez přesné shody radši žádná obálka než špatná.
+  const trustTop=localNorm.length>=8;
+  try{
+   const r=await fetch('https://www.googleapis.com/books/v1/volumes?q=intitle:'+q+'&maxResults=10&fields=items(volumeInfo(title,imageLinks))');
+   if(r.ok){
+    const j=await r.json();
+    const items=(j.items||[]).filter(it=>{
+     const l=it.volumeInfo&&it.volumeInfo.imageLinks;
+     return l&&(l.thumbnail||l.smallThumbnail);
+    });
+    const pick=items.find(it=>normTitle(it.volumeInfo.title)===localNorm)||(trustTop?items[0]:null);
+    if(pick){
+     const l=pick.volumeInfo.imageLinks;
+     return (l.thumbnail||l.smallThumbnail).replace(/^http:/,'https:');
+    }
    }
-  }
- }catch(e){}
- try{
-  const r=await fetch('https://openlibrary.org/search.json?title='+q+'&limit=10&fields=title,cover_i');
-  if(r.ok){
-   const j=await r.json();
-   const docs=(j.docs||[]).filter(d=>d.cover_i);
-   const pick=docs.find(d=>normTitle(d.title)===localNorm)||(trustTop?docs[0]:null);
-   if(pick)return 'https://covers.openlibrary.org/b/id/'+pick.cover_i+'-M.jpg';
-  }
- }catch(e){}
+  }catch(e){}
+  try{
+   const r=await fetch('https://openlibrary.org/search.json?title='+q+'&limit=10&fields=title,cover_i');
+   if(r.ok){
+    const j=await r.json();
+    const docs=(j.docs||[]).filter(d=>d.cover_i);
+    const pick=docs.find(d=>normTitle(d.title)===localNorm)||(trustTop?docs[0]:null);
+    if(pick)return 'https://covers.openlibrary.org/b/id/'+pick.cover_i+'-M.jpg';
+   }
+  }catch(e){}
+ }
  return null;
 }
 async function autoCover(rec){

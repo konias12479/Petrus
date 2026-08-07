@@ -220,7 +220,11 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   byla čistá relevance nespolehlivá — v1.4.1 takhle omylem přišila
   obálku úplně jiné knihy). Bez přesné shody se u názvů kratších než
   8 znaků obálka vůbec nenasadí — radši žádná než špatná; delší
-  názvy si první výsledek ponechají. `rec.coverTried` brání
+  názvy si první výsledek ponechají. Soubory z e-čteček mívají tvar
+  „Název-Autor"/„Název_Autor_Jméno" — `title.split` nejdřív zkusí jen
+  segment před pomlčkou (jméno autora přimíchané do `intitle:` dotazu
+  hledání kazilo, viz „The_Incredible_Journey-Burnford_Sheila", v1.5.5),
+  celý vyčištěný název je fallback. `rec.coverTried` brání
   opakovaným dotazům (u záznamu se automat spustí jen jednou;
   případnou špatnou/chybějící obálku napraví ruční tlačítko 🖼).
   Ručně:
