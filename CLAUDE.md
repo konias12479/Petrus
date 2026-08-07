@@ -286,6 +286,41 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   pokusu, protože `coverTried`/`contentIllsTried` jinak brání
   opakování navždy. V kontejneru mockovat `commons.wikimedia.org`
   přes `page.route()` — skutečné API zase přes proxy nejde.
+- **Učící mód (v1.6.0):** pohled `view-learn` (nav „🎓 Učení" + tlačítko
+  `#btn-learn` v hlavičce čtečky, které rovnou spustí lekci z místa, kde
+  se čte). Tři zdroje lekcí: `buildBookLesson()` (doplňovačky z vět
+  aktuální + 3 následujících stránek, doplněné 2 úlohami na slovesa,
+  která se v textu opravdu vyskytla), `buildWordsLesson()` (CZ→EN ze
+  slovníčku) a `buildVerbsLesson()` (nepravidelná slovesa).
+  Všechny typy úloh sdílejí **jeden ovládací prvek**: prázdná políčka
+  = počet písmen (`slotsEl()`) + zamíchané dlaždice (`renderTiles()`),
+  ovladatelné myší i klávesnicí (`typeLetter`/`backspace`, Enter =
+  další). Schválně bez rušivých písmen navíc — pool = přesně písmena
+  odpovědi. Nápověda je dvoustupňová: 💡 odkryje **jedno náhodné**
+  dosud nesprávné písmeno, 🔑 celé slovo; obojí se počítá jako chyba.
+  Výběr slova do doplňovačky (`pickCloze`): skóre = slovo ve slovníčku
+  (+6) > nepravidelný tvar (+3) > délka; mimo `CLOZE_STOP` a mimo
+  vlastní jména (velké písmeno mimo začátek věty).
+  **Postup učení** v localStorage `petrus-learn`
+  (`{items:{key:{box,due,seen,ok,bad,last}},day,doneToday,streak,total}`),
+  Leitner s intervaly `BOX_DAYS=[0,1,3,7,21,60]` dní; klíče `w:<slovo>`
+  a `g:<sloveso>:<past|pp>`. Správně napoprvé posune o krabičku výš,
+  chyba/nápověda/přeskočení vrací na box 1. Celé offline, žádné API.
+- **Gramatické vysvětlivky:** sekce „Gramatika" v panelu slovíčka
+  (synchronní, offline) a ve zpětné vazbě učícího módu. Zdroj jsou
+  **ručně ověřené tabulky** v index.html: `IRREG_VERBS` (126 sloves,
+  3 tvary + český význam), `IRREG_PLURALS`, `IRREG_COMPAR`,
+  `CONTRACTIONS`; lookup mapy `VERB_BY_FORM` atd., render `grammarEl()`.
+  **Heuristiky typu „končí na -ed → pravidelný minulý čas" jsou
+  schválně zamítnuté** — u „naked", „sacred", „hundred" by tvrdily
+  nesmysl a špatná poučka je v učební aplikaci horší než žádná.
+  Rozšiřovat se má doplněním tabulek, ne odhadováním morfologie.
+- **Přepínač bočních obrázků (v1.6.0):** `settings.rails` (tlačítko
+  `#btn-rails` v zásuvce vzhledu) vypne jen lišty kolem čtecí plochy;
+  ilustrace pak zůstanou inline v textu. Řeší to `railMode()`, které
+  při `rails===false` vrací 0 — a `renderPage()` lišty při railMode 0
+  vůbec neplní, aby se obrázky zbytečně nestahovaly. Hlavní přepínač
+  `settings.ills` vypíná ilustrace úplně a ten vedlejší zneaktivní.
 - **Logo „Petrus" v hlavičce** (`.brand`) je od v1.4.1 klikatelné —
   chová se jako tlačítko „← Zpět" (`show('library')`), funguje
   odkudkoli (i ze čtečky).
