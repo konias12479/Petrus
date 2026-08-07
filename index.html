@@ -65,9 +65,10 @@ main{max-width:2000px;margin:0 auto;padding:20px 16px 80px}
 .pagebar button{padding:6px 12px}
 
 /* ---------- ilustrace ---------- */
-figure.ill{margin:16px auto;text-align:center}
-figure.ill img{max-width:min(100%,360px);max-height:440px;background:#fff;padding:8px;border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.1);cursor:zoom-in}
-figure.ill figcaption{font-size:12.5px;color:var(--muted);font-style:italic;margin-top:6px;max-width:360px;margin-left:auto;margin-right:auto}
+figure.ill{margin:16px auto;text-align:center;max-width:360px}
+figure.ill .ill-canvas{position:relative;border-radius:12px;overflow:hidden;padding:16px 10px 6px;background:radial-gradient(ellipse 75% 65% at 50% 48%,#f4d9a3 0%,#e0b878 38%,#8a6238 72%,#3a2a18 100%)}
+figure.ill img{display:block;margin:0 auto;max-width:100%;max-height:360px;cursor:zoom-in;filter:grayscale(1) contrast(1.9);mix-blend-mode:multiply;-webkit-mask-image:radial-gradient(ellipse 78% 84% at 50% 55%,#000 60%,transparent 97%);mask-image:radial-gradient(ellipse 78% 84% at 50% 55%,#000 60%,transparent 97%)}
+figure.ill figcaption{font-size:12.5px;color:#a3855c;font-style:italic;margin-top:8px;max-width:360px;margin-left:auto;margin-right:auto}
 #ill-rail,#ill-rail-left{display:none}
 #view-reader.rail-on #ill-rail,#view-reader.rail-2 #ill-rail-left{display:flex;flex:0 0 340px;width:340px;flex-direction:column;gap:14px;padding-top:10px}
 #view-reader.rail-on #page-content figure.ill{display:none}
@@ -325,7 +326,7 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.5.5';
+const APP_VERSION='1.5.6';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
 let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,shadow:true},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
@@ -709,11 +710,12 @@ function renderPage(){
 }
 function makeFigure(it){
  const f=document.createElement('figure');f.className='ill';
+ const canvas=document.createElement('div');canvas.className='ill-canvas';
  const img=document.createElement('img');
  img.loading='lazy';img.src=it.src;img.alt=it.alt||'';
  img.onerror=()=>f.remove();
  img.onclick=()=>openLightbox(it);
- f.append(img);
+ canvas.append(img);f.append(canvas);
  if(it.cap){const c=document.createElement('figcaption');c.textContent=it.cap;f.append(c);}
  return f;
 }
