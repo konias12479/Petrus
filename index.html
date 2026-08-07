@@ -191,24 +191,24 @@ figure.ill figcaption{font-size:12.5px;color:#a3855c;font-style:italic;margin-to
 .lrn-fill{height:100%;background:var(--accent);width:0;transition:width .3s}
 .lrn-meta{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-top:7px}
 .lrn-card{background:var(--page);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-top:12px}
-.lrn-prompt{font-size:14px;color:var(--muted);margin-bottom:14px}
-.lrn-prompt b{color:var(--ink);font-size:17px}
+.lrn-prompt{font-size:calc(14px * var(--read-scale,1));color:var(--muted);margin-bottom:14px}
+.lrn-prompt b{color:var(--ink);font-size:calc(17px * var(--read-scale,1))}
 .lrn-sent{font-family:Georgia,'Times New Roman',serif;font-size:19px;line-height:2.2}
 .lrn-slots{display:inline-flex;gap:5px;margin:0 5px;vertical-align:-7px}
-.slot{width:27px;height:34px;border-bottom:2px solid var(--accent);display:inline-flex;align-items:center;justify-content:center;
- font-family:system-ui,sans-serif;font-weight:700;font-size:20px;cursor:pointer;user-select:none}
+.slot{width:calc(27px * var(--read-scale,1));height:calc(34px * var(--read-scale,1));border-bottom:2px solid var(--accent);display:inline-flex;align-items:center;justify-content:center;
+ font-family:system-ui,sans-serif;font-weight:700;font-size:calc(20px * var(--read-scale,1));cursor:pointer;user-select:none}
 .slot.filled{background:var(--hl);border-radius:5px 5px 0 0}
 .lrn-tiles{display:flex;gap:9px;flex-wrap:wrap;margin-top:24px}
-.tile{width:42px;height:46px;padding:0;font-size:21px;font-weight:700;background:var(--bg);border-radius:9px}
+.tile{width:calc(42px * var(--read-scale,1));height:calc(46px * var(--read-scale,1));padding:0;font-size:calc(21px * var(--read-scale,1));font-weight:700;background:var(--bg);border-radius:9px}
 .tile.used{opacity:.22;pointer-events:none}
 .lrn-card.ok .slot{border-color:#2e8b57;color:#2e8b57}
 .lrn-card.bad .lrn-slots{animation:shake .38s}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
-.lrn-fb{margin-top:18px;padding:12px 15px;border-radius:var(--radius);font-size:15px;line-height:1.55}
+.lrn-fb{margin-top:18px;padding:12px 15px;border-radius:var(--radius);font-size:calc(15px * var(--read-scale,1));line-height:1.55}
 .lrn-fb.ok{background:rgba(46,139,87,.14)}
 .lrn-fb.bad{background:rgba(190,70,70,.14)}
-.lrn-fb .gram{margin-top:8px;font-size:14px;color:var(--muted)}
-.lrn-fb .forms{font-family:Georgia,serif;font-size:16px;color:var(--ink)}
+.lrn-fb .gram-note{margin-top:8px;font-size:calc(14px * var(--read-scale,1))}
+.lrn-fb .forms{font-family:Georgia,serif;font-size:calc(16px * var(--read-scale,1));color:var(--ink)}
 .lrn-actions{display:flex;gap:8px;margin-top:20px;flex-wrap:wrap;align-items:center}
 #learn-done{background:var(--page);border:1px solid var(--border);border-radius:var(--radius);padding:26px;margin-top:20px;text-align:center}
 #learn-done .big{font-size:34px;margin-bottom:8px}
@@ -450,7 +450,7 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.7.3';
+const APP_VERSION='1.7.4';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
 let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,rails:true,shadow:true},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
@@ -1895,6 +1895,9 @@ function applySettings(){
  ls.style.fontSize=settings.size+'px';
  ls.style.lineHeight=settings.lh;
  ls.style.fontWeight=settings.bold?'700':'';
+ // ostatní text v učení (zadání, chybějící písmena, zpětná vazba, gramatika)
+ // škáluje poměrově vůči základní velikosti 19px přes CSS proměnnou
+ document.documentElement.style.setProperty('--read-scale',(settings.size/19).toFixed(3));
  document.querySelector('.book-page').style.maxWidth=settings.width+'px';
  const bb=$('#btn-bold');bb.classList.toggle('sel',settings.bold);
  bb.textContent=settings.bold?'Tučné písmo: zapnuto':'Tučné písmo: vypnuto';
