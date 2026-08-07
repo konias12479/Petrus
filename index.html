@@ -147,26 +147,29 @@ figure.ill figcaption{font-size:12.5px;color:#a3855c;font-style:italic;margin-to
 
 /* ---------- panel se slovíčkem ---------- */
 #panel{position:fixed;z-index:50;background:var(--panel);border:1px solid var(--border);box-shadow:0 10px 40px rgba(0,0,0,.25);display:flex;flex-direction:column}
-@media(min-width:900px){#panel{top:54px;right:0;bottom:0;width:400px;border-radius:0}}
+@media(min-width:900px){#panel{top:54px;left:0;bottom:0;width:400px;border-radius:0}}
 @media(max-width:899px){#panel{left:0;right:0;bottom:0;max-height:70vh;border-radius:18px 18px 0 0}}
 .panel-head{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border)}
-#panel-title{font-size:22px;font-weight:700;flex:1;word-break:break-word}
+#panel-title{font-size:calc(22px * var(--read-scale,1));font-weight:700;flex:1;word-break:break-word}
 #panel-phon{color:var(--muted);font-size:14px}
 #panel-body{overflow-y:auto;padding:8px 16px 20px}
 .sec{margin:14px 0}
 .sec h4{margin:0 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.sec .main-tr{font-size:19px;font-weight:600}
+.sec .main-tr{font-size:calc(19px * var(--read-scale,1));font-weight:600}
 .loading{color:var(--muted);font-style:italic}
 .err{color:#c0504d;font-size:14px}
-.alts{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+/* text v panelu (překlad, věta, výklad, výskyty) má být čitelný jako
+   text knihy — vychází ze stejné báze 19px a stejné --read-scale, takže
+   při výchozí velikosti odpovídá přesně settings.size a mění se s ním */
+.alts{width:100%;border-collapse:collapse;font-size:calc(19px * var(--read-scale,1));margin-top:6px}
 .alts td{padding:3px 6px 3px 0;vertical-align:top}
 .alts td.pos{color:var(--muted);white-space:nowrap}
-.defs{font-size:14px;margin:0;padding-left:18px}
+.defs{font-size:calc(19px * var(--read-scale,1));margin:0;padding-left:18px}
 .defs li{margin-bottom:6px}
 .defs .ex{display:block;color:var(--muted);font-style:italic}
-.ctx-sent{font-size:15px;background:var(--hl);border-radius:8px;padding:8px 10px;margin-bottom:6px}
-.ctx-tr{font-size:15px}
-.occ{font-size:14px;color:var(--muted);margin:4px 0;padding-left:10px;border-left:3px solid var(--border)}
+.ctx-sent{font-size:calc(19px * var(--read-scale,1));background:var(--hl);border-radius:8px;padding:8px 10px;margin-bottom:6px}
+.ctx-tr{font-size:calc(19px * var(--read-scale,1))}
+.occ{font-size:calc(19px * var(--read-scale,1));color:var(--muted);margin:4px 0;padding-left:10px;border-left:3px solid var(--border)}
 .pos-cz{color:var(--muted)}
 .panel-note{font-size:11px;color:var(--muted);margin-top:18px}
 
@@ -469,7 +472,7 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.7.5';
+const APP_VERSION='1.7.6';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
 let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,rails:true,shadow:true},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
@@ -1916,7 +1919,7 @@ function applySettings(){
  ls.style.fontWeight=settings.bold?'700':'';
  // ostatní text v učení (zadání, chybějící písmena, zpětná vazba, gramatika)
  // škáluje poměrově vůči základní velikosti 19px přes CSS proměnnou
- document.documentElement.style.setProperty('--read-scale',(settings.size/19).toFixed(3));
+ document.documentElement.style.setProperty('--read-scale',(settings.size/19).toFixed(6));
  document.querySelector('.book-page').style.maxWidth=settings.width+'px';
  const bb=$('#btn-bold');bb.classList.toggle('sel',settings.bold);
  bb.textContent=settings.bold?'Tučné písmo: zapnuto':'Tučné písmo: vypnuto';
