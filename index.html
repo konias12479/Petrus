@@ -61,8 +61,10 @@ main{max-width:2000px;margin:0 auto;padding:20px 16px 80px}
 .w{cursor:pointer;border-radius:3px}
 .w:hover{background:var(--hl)}
 .w.active{background:var(--accent);color:var(--accent-ink)}
-.pagebar{display:flex;align-items:center;gap:14px;margin-top:14px;color:var(--muted);font-size:14px}
+.pagebar{display:flex;align-items:center;gap:14px;margin-top:14px;padding:8px 4px;color:var(--muted);font-size:14px;position:sticky;bottom:0;background:var(--bg);z-index:4}
 .pagebar button{padding:6px 12px}
+.pagebar .goto{display:flex;align-items:center;gap:6px;margin-left:auto}
+.pagebar .goto input{width:64px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--page);color:var(--ink);font-size:14px}
 
 /* ---------- ilustrace ---------- */
 figure.ill{margin:16px auto;text-align:center;max-width:360px}
@@ -221,6 +223,10 @@ h1.pgtitle{font-size:22px;margin:6px 0 0}
       <button id="pg-prev">← Předchozí</button>
       <span id="pg-info"></span>
       <button id="pg-next">Další →</button>
+      <span class="goto">
+        <input type="number" id="pg-goto-input" min="1" placeholder="č. strany" aria-label="Přejít na stránku číslo">
+        <button id="pg-goto-btn">Jít</button>
+      </span>
     </div>
   </section>
 
@@ -290,7 +296,7 @@ h1.pgtitle{font-size:22px;margin:6px 0 0}
     <input type="range" id="rng-lh" min="14" max="22" step="1">
   </div>
   <div class="set-group">
-    <label class="head">Ilustrace (knihy ze základní knihovny)</label>
+    <label class="head">Ilustrace při čtení</label>
     <button id="btn-ills">Ilustrace: zapnuty</button>
   </div>
   <div class="set-group">
@@ -326,7 +332,7 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.5.6';
+const APP_VERSION='1.5.7';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
 let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,shadow:true},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
@@ -706,6 +712,7 @@ function renderPage(){
  state.railMode=railMode();
  updateRail();
  $('#pg-info').textContent='Strana '+(state.page+1)+' / '+state.pages.length;
+ $('#pg-goto-input').max=state.pages.length;
  window.scrollTo({top:0});
 }
 function makeFigure(it){
@@ -1132,6 +1139,14 @@ $('#pg-prev').onclick=()=>gotoPage(state.page-1);
 $('#pg-next').onclick=()=>gotoPage(state.page+1);
 $('#turn-prev').onclick=()=>gotoPage(state.page-1);
 $('#turn-next').onclick=()=>gotoPage(state.page+1);
+function gotoPageInput(){
+ const v=parseInt($('#pg-goto-input').value,10);
+ if(!v||v<1)return;
+ gotoPage(v-1);
+ $('#pg-goto-input').value='';
+}
+$('#pg-goto-btn').onclick=gotoPageInput;
+$('#pg-goto-input').addEventListener('keydown',e=>{if(e.key==='Enter')gotoPageInput();});
 $('#btn-speak').onclick=()=>{const t=$('#panel-title').textContent;if(t)speak(t);};
 $('#btn-save-word').onclick=()=>{
  if(!state.panelWord)return;
