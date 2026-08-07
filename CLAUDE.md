@@ -321,6 +321,27 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   při `rails===false` vrací 0 — a `renderPage()` lišty při railMode 0
   vůbec neplní, aby se obrázky zbytečně nestahovaly. Hlavní přepínač
   `settings.ills` vypíná ilustrace úplně a ten vedlejší zneaktivní.
+- **Osvětlený stůl a papírová stránka (v1.7.0):** prázdné okraje kolem
+  čtecí plochy zaplňuje „stůl" — fixní vrstva `#desk` (`z-index:-2`,
+  tedy pod `#frieze` na -1; body background se propaguje na canvas, takže
+  záporné z-indexy jsou nad ním) s teplým radiálním světlem pod stránkou,
+  vinětou k okrajům (`::before`) a papírovým zrnem (`::after`, inline SVG
+  `feTurbulence` v data URI, ~6 %, `mix-blend-mode` multiply/overlay podle
+  motivu). Zobrazuje se jen ve čtečce, řídí ho `settings.shadow` stejně
+  jako stínohru a vlys (`applySettings()` + `show()`). K tomu tři doplňky
+  na `.book-page`: **stoh listů** (pseudoprvky `::before`/`::after`
+  absolutně mimo stránku, `repeating-linear-gradient`, šířky přes CSS
+  proměnné `--stk-l`/`--stk-r`, které nastavuje `updateStack()` podle
+  `state.page`/`state.pages.length` — vlevo přečteno, vpravo zbývá,
+  dohromady `STACK_MAX` 30 px), **záložková stuha** (`.ribbon`, reálný
+  prvek v `.book-page` s `z-index:-1`, kouká zpod horní hrany; místo pro
+  ni dělá `padding-top` na `.book-wrap`, aby ji nezakryla sticky
+  hlavička) a **hlubší vlastní stín** (`--page-shadow` per motiv).
+  Vše se zapíná třídou `#view-reader.paper`; pod 900 px se stoh i stuha
+  skryjí, pod 640 px i celý `#desk`. Barvy stolu, listů, stuhy a stínu
+  jsou proměnné v každém `body[data-theme=…]`.
+  Stránku samotnou **nerozšiřovat** (900 px je optimum čitelnosti);
+  dvoustránkový rozklad je samostatný odložený nápad.
 - **Logo „Petrus" v hlavičce** (`.brand`) je od v1.4.1 klikatelné —
   chová se jako tlačítko „← Zpět" (`show('library')`), funguje
   odkudkoli (i ze čtečky).
