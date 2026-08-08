@@ -168,7 +168,9 @@ figure.ill figcaption{font-size:12.5px;color:#a3855c;font-style:italic;margin-to
 .defs li{margin-bottom:6px}
 .defs .ex{display:block;color:var(--muted);font-style:italic}
 .ctx-sent{font-size:calc(19px * var(--read-scale,1));background:var(--hl);border-radius:8px;padding:8px 10px;margin-bottom:6px}
-.speak-line{display:inline-flex;align-items:center;gap:6px;font-size:14px;padding:6px 12px;margin:0 0 12px}
+.speak-wrap{display:flex;gap:8px;align-items:center;margin:0 0 12px;flex-wrap:wrap}
+.speak-line{display:inline-flex;align-items:center;gap:6px;font-size:14px;padding:6px 12px}
+.speak-rate{font:inherit;font-size:13px;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--page);color:var(--ink);cursor:pointer}
 .ctx-sent .icon{float:right;padding:0 0 0 8px;font-size:16px}
 .ctx-tr{font-size:calc(19px * var(--read-scale,1))}
 .occ{font-size:calc(19px * var(--read-scale,1));color:var(--muted);margin:4px 0;padding-left:10px;border-left:3px solid var(--border)}
@@ -475,15 +477,24 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.8.0';
+const APP_VERSION='1.9.0';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
-let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,rails:true,shadow:true,lang:'en'},
+let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,rails:true,shadow:true,lang:'en',rate:0.95},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
 function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}
 function getWords(){return JSON.parse(localStorage.getItem(WORDS_KEY)||'[]');}
 function setWords(w){localStorage.setItem(WORDS_KEY,JSON.stringify(w));}
 
 let trCache=JSON.parse(localStorage.getItem(CACHE_KEY)||'{}');
+// jednorázová očista: staré fr záznamy mohly obsahovat anglický výsledek
+// z MyMemory (překladová paměť umí vrátit EN zásah) — smazat a nechat
+// dohledat znovu; značka __v2 zajistí, že se to neopakuje při každém startu
+if(!trCache.__v2){
+ Object.keys(trCache).forEach(k=>{if(k.startsWith('t:fr:'))delete trCache[k];});
+ trCache.__v2=1;
+ try{localStorage.setItem(CACHE_KEY,JSON.stringify(trCache));}catch(e){}
+}
+const trSession={}; // výsledky z MyMemory jen po dobu session, neperzistovat
 function cachePut(k,v){trCache[k]=v;const keys=Object.keys(trCache);
  if(keys.length>400)keys.slice(0,keys.length-400).forEach(x=>delete trCache[x]);
  try{localStorage.setItem(CACHE_KEY,JSON.stringify(trCache));}catch(e){trCache={};}}
@@ -520,10 +531,18 @@ async function translate(text,sl){
  sl=sl||curLang();
  const key='t:'+(sl==='en'?'':sl+':')+text.toLowerCase();
  if(trCache[key])return trCache[key];
+ if(trSession[key])return trSession[key];
  let res;
  try{res=await translateGoogle(text,sl);}
- catch(e){res=await translateMyMemory(text,sl);}
- cachePut(key,res);
+ catch(e){
+  // gtx umí při rychlém klikání vracet 429 — krátká pauza a druhý pokus,
+  // než se sáhne po MyMemory (jehož překladová paměť umí vrátit špatný jazyk)
+  await new Promise(r=>setTimeout(r,700));
+  try{res=await translateGoogle(text,sl);}
+  catch(e2){res=await translateMyMemory(text,sl);}
+ }
+ if(res.src==='Google')cachePut(key,res);
+ else trSession[key]=res; // MyMemory necachovat trvale
  return res;
 }
 async function fetchDefinition(word){
@@ -548,7 +567,8 @@ async function findExampleSentence(word){
 }
 function speak(text,lang){
  try{const u=new SpeechSynthesisUtterance(text);
-  u.lang=(lang||curLang())==='fr'?'fr-FR':'en-US';u.rate=0.95;
+  u.lang=(lang||curLang())==='fr'?'fr-FR':'en-US';
+  u.rate=settings.rate||0.95;
   speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}
 }
 
@@ -772,7 +792,8 @@ function makeCover(b){
 function renderLibrary(){
  renderBuiltin();
  const cont=$('#cards');cont.innerHTML='';
- const list=[...state.texts].sort((a,b)=>b.addedAt-a.addedAt);
+ // knihovna ukazuje jen texty aktuálního jazyka (EN/FR sekce se nemíchají)
+ const list=state.texts.filter(t=>(t.lang||'en')===settings.lang).sort((a,b)=>b.addedAt-a.addedAt);
  $('#empty-lib').hidden=list.length>0;
  for(const t of list){
   const card=document.createElement('div');card.className='card';
@@ -935,16 +956,54 @@ async function loadIllustrations(builtinId){
    Wikimedia Commons (veřejné dílo/svobodná licence, bez API klíče).
    Výsledek se cachuje v IndexedDB — do repozitáře nic nejde. */
 const STOPWORDS=new Set(['the','and','that','with','from','this','have','were','they','their','them','what','when','where','which','would','could','should','about','into','only','just','more','some','then','than','also','been','being','after','before','because','while','through','over','under','very','much','still','even','once','upon','said','says','like','well','back','down','out','off','away','again','around','without','other','another','each','every','such','same','both','many','most','less','least','make','made','take','took','give','gave','your','here','there','those','these']);
-function chapterQuery(text){
- // Wikimedia Commons má jen reálné/encyklopedické foto — jméno
- // fiktivní postavy tam skoro jistě nic nenajde, ale reálné místo
- // (Londýn, hora, přístav…) ano. Proto přednost místům za předložkou
- // („in London", „near the coast") před obecnou frekvencí slov.
+const CLOZE_STOP_FR=new Set(('le la les un une des de du au aux et ou mais donc car ne pas plus très bien '+
+ 'tout tous toute toutes ce cette ces cet celui celle je tu il elle on nous vous ils elles me te se lui leur '+
+ 'mon ma mes ton ta tes son sa ses notre votre leurs est sont était étaient été être suis es sommes êtes '+
+ 'ai as a avons avez ont avait avaient avoir eu fait faire fais va vais vas allons allez vont aller '+
+ 'peut peux pouvons pouvez peuvent pouvoir veut veux voulons voulez veulent vouloir dit dis dire disent '+
+ 'qui que quoi dont où quand comment pourquoi parce comme aussi alors puis encore déjà toujours jamais '+
+ 'ici là bas avec sans pour par sur sous dans chez vers entre avant après pendant depuis rien personne '+
+ 'quelque chose autre autres même mêmes moi toi soi eux cela ça ceci oui non peut-être beaucoup peu '+
+ 'trop assez moins mieux mal vite deux trois quatre cinq six sept huit neuf dix cent mille').split(/\s+/));
+const STOPWORDS_FR=new Set([...CLOZE_STOP_FR,'cher','chère','chere','journal','chapitre','tome','jour','jours',
+ 'fois','chose','choses','regarde','regarder','regardent','demande','demander','répond','répondre','pense',
+ 'penser','parle','parler','parlent','arrive','arriver','arrivent','reste','rester','restent','aujourd','hui',
+ 'maintenant','soudain','doucement','vraiment','longtemps','derrière','devant','pendant','jusqu','chaque',
+ 'quelques','plusieurs','ensuite','enfin','soir','soirs','matin','madame','monsieur','petit','petite','petits',
+ 'petites','grand','grande','grands','grandes','jeune','jeunes','vieux','vieille','bonne','bonjour','bonsoir',
+ 'merci','question','questions','réponse','histoire','moment','moments','minute','minutes','heure','heures',
+ 'semaine','semaines','année','années','veux','peux','faut','vais','être','sais','sait','sont','regardé',
+ 'demandé','pensé','répondu','habite','habitent','appelle','appellent','pleut','crie','crient','sourit',
+ 'sourient','marche','marchent','entend','entendent','ouvre','ouvrent','ferme','ferment']);
+/* Vrací seznam kandidátních dotazů (od nejlepšího) — když Commons pro
+   první nic nenajde, zkusí se další. Wikimedia Commons má jen reálné/
+   encyklopedické foto — jméno fiktivní postavy tam skoro jistě nic
+   nenajde, ale reálné místo (Londýn, hora, přístav…) ano. EN: přednost
+   místům za předložkou před obecnou frekvencí slov. FR (originální
+   série s vymyšlenými jmény): vlastní jména se naopak vynechávají
+   a berou se nejčastější obsahová slova (forêt, église, loup…). */
+function chapterQueries(text,lang){
+ const out=[];
+ if(lang==='fr'){
+  const proper=new Set();
+  for(const s of splitSentences(text)){
+   const ws=s.match(/[A-Za-zÀ-ÖØ-öø-ÿŒœ][A-Za-zÀ-ÖØ-öø-ÿŒœ'’-]{2,}/g)||[];
+   ws.slice(1).forEach(w=>{if(/^[A-ZÀ-ÖØ-Þ]/.test(w))proper.add(w.toLowerCase());});
+  }
+  const freq={};
+  (text.toLowerCase().match(/[a-zà-öø-ÿœ]{4,}/g)||[]).forEach(w=>{
+   if(!STOPWORDS_FR.has(w)&&!proper.has(w))freq[w]=(freq[w]||0)+1;});
+  const top=Object.entries(freq).sort((a,b)=>b[1]-a[1]).map(([w])=>w);
+  if(top.length>=2)out.push(top[0]+' '+top[1]);
+  if(top.length)out.push(top[0]);
+  if(top.length>=3)out.push(top[2]);
+  return out;
+ }
  const places={};
  let m;const placeRe=/\b(?:in|at|near|to|from|across|over|beneath|above|outside|inside|through|toward|towards|around)\s+([A-Z][a-z]{2,})/g;
  while((m=placeRe.exec(text)))places[m[1]]=(places[m[1]]||0)+1;
  const top=Object.entries(places).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([w])=>w);
- if(top.length)return top.join(' ');
+ if(top.length)out.push(top.join(' '));
  const sentences=splitSentences(text);
  const proper={};
  for(const s of sentences){
@@ -952,12 +1011,14 @@ function chapterQuery(text){
   words.slice(1).forEach(w=>{if(/^[A-Z][a-z]+$/.test(w))proper[w]=(proper[w]||0)+1;});
  }
  const top2=Object.entries(proper).filter(([,c])=>c>=2).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([w])=>w);
- if(top2.length)return top2.join(' ');
+ if(top2.length)out.push(top2.join(' '));
  const freq={};
  for(const s of sentences){
   (s.toLowerCase().match(/[a-z']{4,}/g)||[]).forEach(w=>{if(!STOPWORDS.has(w))freq[w]=(freq[w]||0)+1;});
  }
- return Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([w])=>w).join(' ');
+ const top3=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,2).map(([w])=>w).join(' ');
+ if(top3)out.push(top3);
+ return out;
 }
 async function fetchCommonsImage(query){
  if(!query)return null;
@@ -994,8 +1055,10 @@ async function buildContentIllustrations(rec){
   const from=starts[i],to=i+1<starts.length?starts[i+1]:paragraphs.length;
   for(const[sFrom,sTo]of splitChapterSections(paragraphs,from,to)){
    if(items.length>=40)break;
-   const query=chapterQuery(paragraphs.slice(sFrom,sTo).join(' '));
-   const src=await fetchCommonsImage(query);
+   let src=null;
+   for(const q of chapterQueries(paragraphs.slice(sFrom,sTo).join(' '),rec.lang||'en')){
+    src=await fetchCommonsImage(q);if(src)break;
+   }
    if(src)items.push({par:sFrom,src,alt:''});
   }
  }
@@ -1031,7 +1094,7 @@ function gotoPage(n){
  }
 }
 /* stínohra na začátku kapitoly */
-const HEAD_WORD=/^(chapter|adventure)\s+[ivxlc\d]/i,HEAD_NUM=/^\d{1,2}\.\s+\S/,HEAD_ROM=/^[IVXLC]+\.\s+\S/;
+const HEAD_WORD=/^(chapter|adventure|chapitre)\s+[ivxlc\d]/i,HEAD_NUM=/^\d{1,2}\.\s+\S/,HEAD_ROM=/^[IVXLC]+\.\s+\S/;
 function isHeading(p){return p.length<70&&(HEAD_WORD.test(p)||HEAD_NUM.test(p)||HEAD_ROM.test(p));}
 /* Najde odstavce začínající kapitolu. Nejdřív jistá slovní/číslovaná
    („CHAPTER ONE", „1. Titulek") — pokud jich je aspoň pár, kniha má
@@ -1091,7 +1154,11 @@ function openReader(t){
  state.page=Math.min(t.pos.page||0,state.pages.length-1);
  state.ills=null;state.lastShadow=null;
  state.chapterIdx=new Set(chapterStarts(t.paragraphs));
- const illsPromise=t.builtin?loadIllustrations(t.builtin):loadContentIllustrations(t);
+ const bbCur=t.builtin&&builtinById(t.builtin);
+ // knihy s vlastním manifestem ilustrací (Tenniel…) ho použijí; všechny
+ // ostatní (nahrané i vestavěné bez manifestu, např. francouzské povídky)
+ // dostanou obsahové ilustrace z Wikimedia Commons
+ const illsPromise=(bbCur&&bbCur.ills)?loadIllustrations(t.builtin):loadContentIllustrations(t);
  illsPromise.then(items=>{
   if(state.current===t&&items&&items.length){
    state.ills=items;renderPage();
@@ -1103,7 +1170,9 @@ function openReader(t){
 }
 async function retryContentIllustrations(){
  const t=state.current;
- if(!t||t.builtin)return;
+ if(!t)return;
+ const bb=t.builtin&&builtinById(t.builtin);
+ if(bb&&bb.ills)return; // knihy s vlastním manifestem se nedohledávají
  t.contentIlls=null;t.contentIllsTried=false;
  toast('Hledám ilustrace ke kapitolám…');
  const items=await loadContentIllustrations(t);
@@ -1120,10 +1189,20 @@ function sec(label){
  d.append(h,body);d.body=body;return d;
 }
 function speakBtn(text,label){
+ const wrap=document.createElement('span');wrap.className='speak-wrap';
  const b=document.createElement('button');b.className='speak-line';
  b.textContent='🔊 '+(label||'Přehrát výslovnost');
  b.onclick=()=>speak(text);
- return b;
+ const sel=document.createElement('select');sel.className='speak-rate';
+ sel.title='Rychlost výslovnosti';
+ [['0.55','🐢 pomalu'],['0.75','volněji'],['0.95','normálně']].forEach(([v,t])=>{
+  const o=document.createElement('option');o.value=v;o.textContent=t;sel.append(o);
+ });
+ sel.value=String(settings.rate||0.95);
+ if(!sel.value)sel.value='0.95';
+ sel.onchange=()=>{settings.rate=parseFloat(sel.value);saveSettings();speak(text);};
+ wrap.append(b,sel);
+ return wrap;
 }
 function showPanel(title){
  $('#panel-title').textContent=title;
@@ -1197,7 +1276,7 @@ async function openWord(word,sentence){
  const body=$('#panel-body');
  body.append(speakBtn(word));
  const sTr=sec('Překlad');body.append(sTr);
- const gn=curLang()==='en'?grammarNotes(word):[];
+ const gn=curLang()==='en'?grammarNotes(word):grammarNotesFR(word);
  if(gn.length){
   const sG=sec('Gramatika');body.append(sG);
   gn.forEach((n,i)=>{const g=grammarEl(n);if(i)g.style.marginTop='10px';sG.body.append(g);});
@@ -1558,10 +1637,111 @@ function formsLine(parts,form){
  const d=el('div','forms');
  parts.forEach((p,i)=>{
   if(i)d.append(' – ');
-  const hit=(p.match(/[a-z]+/g)||[]).some(x=>x===form);
+  const hit=(p.toLowerCase().match(/[a-zà-öø-ÿœ]+/g)||[]).some(x=>x===form);
   d.append(hit?el('i',null,p):document.createTextNode(p));
  });
  return d;
+}
+
+/* ============ francouzská gramatika (ručně ověřené tabulky, offline) ============ */
+const FR_VERBS=`être|suis es est sommes êtes sont|été|být
+avoir|ai as a avons avez ont|eu|mít
+aller|vais vas va allons allez vont|allé|jít, jet
+faire|fais fais fait faisons faites font|fait|dělat
+pouvoir|peux peux peut pouvons pouvez peuvent|pu|moci
+vouloir|veux veux veut voulons voulez veulent|voulu|chtít
+devoir|dois dois doit devons devez doivent|dû|muset
+savoir|sais sais sait savons savez savent|su|vědět, umět
+venir|viens viens vient venons venez viennent|venu|přijít, přijet
+voir|vois vois voit voyons voyez voient|vu|vidět
+dire|dis dis dit disons dites disent|dit|říct
+prendre|prends prends prend prenons prenez prennent|pris|vzít (si)
+mettre|mets mets met mettons mettez mettent|mis|dát, položit
+partir|pars pars part partons partez partent|parti|odejít, odjet
+sortir|sors sors sort sortons sortez sortent|sorti|vyjít ven
+dormir|dors dors dort dormons dormez dorment|dormi|spát
+boire|bois bois boit buvons buvez boivent|bu|pít
+croire|crois crois croit croyons croyez croient|cru|věřit, myslet si
+connaître|connais connais connaît connaissons connaissez connaissent|connu|znát
+écrire|écris écris écrit écrivons écrivez écrivent|écrit|psát
+lire|lis lis lit lisons lisez lisent|lu|číst
+vivre|vis vis vit vivons vivez vivent|vécu|žít
+tenir|tiens tiens tient tenons tenez tiennent|tenu|držet`
+ .split('\n').map(l=>{const[base,pres,part,cz]=l.split('|');
+  return{base,pres:pres.split(' '),part,cz};});
+const FR_PERS=['já (je)','ty (tu)','on/ona (il/elle)','my (nous)','vy (vous)','oni (ils/elles)'];
+const FR_VERB_BY_FORM=new Map();
+FR_VERBS.forEach(v=>{
+ v.pres.forEach((f,i)=>{
+  const e=FR_VERB_BY_FORM.get(f)||[];
+  const hit=e.find(x=>x.v===v&&!x.part);
+  if(hit)hit.pers.push(FR_PERS[i]);else e.push({v,pers:[FR_PERS[i]],part:false});
+  FR_VERB_BY_FORM.set(f,e);
+ });
+ const e=FR_VERB_BY_FORM.get(v.part)||[];
+ e.push({v,pers:[],part:true});FR_VERB_BY_FORM.set(v.part,e);
+});
+const FR_ELISION={
+ "l'":{full:'le / la',desc:'určitý člen le/la se před samohláskou zkracuje (elize)',cz:"l'école = (ta) škola, l'ami = (ten) přítel"},
+ "j'":{full:'je',desc:'zájmeno je (já) se před samohláskou zkracuje (elize)',cz:"j'ai = mám, j'habite = bydlím"},
+ "d'":{full:'de',desc:'předložka de (z, od) se před samohláskou zkracuje (elize)',cz:"un verre d'eau = sklenice vody"},
+ "n'":{full:'ne',desc:'záporka ne se před samohláskou zkracuje (elize)',cz:"Il n'est pas là. = Není tu."},
+ "m'":{full:'me',desc:'zájmeno me (mě, mi) se před samohláskou zkracuje (elize)',cz:"Elle m'aime. = Má mě ráda."},
+ "t'":{full:'te',desc:'zájmeno te (tě, ti) se před samohláskou zkracuje (elize)',cz:"Je t'écoute. = Poslouchám tě."},
+ "s'":{full:'se',desc:'zvratné se se před samohláskou zkracuje (elize)',cz:"Elle s'appelle Chloé. = Jmenuje se Chloé."},
+ "c'":{full:'ce',desc:'ukazovací ce (to) se před samohláskou zkracuje (elize)',cz:"C'est vrai. = To je pravda."},
+ "qu'":{full:'que',desc:'que (že, který) se před samohláskou zkracuje (elize)',cz:"Elle dit qu'il dort. = Říká, že spí."},
+};
+const FR_ART_FORMS=['le garçon','la nuit','les amis',"l'école"];
+const FR_DEM_FORMS=['ce soir','cet homme','cette nuit','ces jours'];
+const FR_GRAM={
+ le:[{desc:'určitý člen — mužský rod, jednotné číslo („ten")',forms:FR_ART_FORMS,cz:'„Le" bývá i zájmeno „ho": Je le vois. = Vidím ho.'}],
+ la:[{desc:'určitý člen — ženský rod, jednotné číslo („ta")',forms:FR_ART_FORMS,cz:'„La" bývá i zájmeno „ji": Je la vois. = Vidím ji.'}],
+ les:[{desc:'určitý člen — množné číslo (oba rody)',forms:FR_ART_FORMS,cz:'„Les" bývá i zájmeno „je": Je les vois. = Vidím je.'}],
+ un:[{desc:'neurčitý člen — mužský rod („nějaký, jeden")',forms:['un garçon','une fille','des amis']}],
+ une:[{desc:'neurčitý člen — ženský rod („nějaká, jedna")',forms:['un garçon','une fille','des amis']}],
+ des:[{desc:'neurčitý člen množného čísla („nějací"); také stažený tvar de + les',forms:['un garçon','une fille','des amis'],cz:'des = de + les: la maison des Moreau = dům Moreauových'}],
+ du:[{desc:'stažený tvar de + le; také dělivý člen („trochu, nějaký")',forms:['du pain','de la musique',"de l'eau"],cz:'Il boit du sang. = Pije krev.'}],
+ au:[{desc:'stažený tvar à + le („do, v, k")',forms:['au lycée','à la maison',"à l'école",'aux amis'],cz:'Je vais au café. = Jdu do kavárny.'}],
+ aux:[{desc:'stažený tvar à + les („do, v, k" — množné číslo)',forms:['au lycée','aux amis']}],
+ ce:[{desc:'ukazovací určení — mužský rod („tento"); jako podmět „to"',forms:FR_DEM_FORMS,cz:"C'est… = To je…"}],
+ cet:[{desc:'ukazovací určení — mužský rod před samohláskou („tento")',forms:FR_DEM_FORMS}],
+ cette:[{desc:'ukazovací určení — ženský rod („tato")',forms:FR_DEM_FORMS}],
+ ces:[{desc:'ukazovací určení — množné číslo („tito, tyto")',forms:FR_DEM_FORMS}],
+ mon:[{desc:'přivlastňovací určení — můj (mužský rod)',forms:['mon père','ma mère','mes amis']}],
+ ma:[{desc:'přivlastňovací určení — moje (ženský rod)',forms:['mon père','ma mère','mes amis']}],
+ mes:[{desc:'přivlastňovací určení — moji (množné číslo)',forms:['mon père','ma mère','mes amis']}],
+ ton:[{desc:'přivlastňovací určení — tvůj (mužský rod)',forms:['ton père','ta mère','tes amis']}],
+ ta:[{desc:'přivlastňovací určení — tvoje (ženský rod)',forms:['ton père','ta mère','tes amis']}],
+ tes:[{desc:'přivlastňovací určení — tvoji (množné číslo)',forms:['ton père','ta mère','tes amis']}],
+ son:[{desc:'přivlastňovací určení — jeho/její (mužský rod věci)',forms:['son père','sa mère','ses amis'],cz:'Pozor: řídí se rodem věci, ne vlastníka — sa maison = jeho i její dům.'}],
+ sa:[{desc:'přivlastňovací určení — jeho/její (ženský rod věci)',forms:['son père','sa mère','ses amis'],cz:'Pozor: řídí se rodem věci, ne vlastníka — sa maison = jeho i její dům.'}],
+ ses:[{desc:'přivlastňovací určení — jeho/její (množné číslo)',forms:['son père','sa mère','ses amis']}],
+ notre:[{desc:'přivlastňovací určení — náš/naše',forms:['notre maison','nos amis']}],
+ nos:[{desc:'přivlastňovací určení — naši (množné číslo)',forms:['notre maison','nos amis']}],
+ votre:[{desc:'přivlastňovací určení — váš/vaše',forms:['votre maison','vos amis']}],
+ vos:[{desc:'přivlastňovací určení — vaši (množné číslo)',forms:['votre maison','vos amis']}],
+ leur:[{desc:'přivlastňovací určení — jejich; také zájmeno „jim"',forms:['leur maison','leurs amis'],cz:'Il leur parle. = Mluví s nimi.'}],
+ leurs:[{desc:'přivlastňovací určení — jejich (množné číslo)',forms:['leur maison','leurs amis']}],
+ ne:[{desc:'záporka — zápor se tvoří dvojicí ne … pas kolem slovesa',forms:['Je ne sais pas.',"Il n'est pas là."],cz:'Před samohláskou se ne zkracuje na n\'.'}],
+ pas:[{desc:'druhá část záporu ne … pas',forms:['Je ne sais pas.','Elle ne dort pas.'],cz:'„Pas" je i podstatné jméno „krok".'}],
+ on:[{desc:'zájmeno „on" — hovorově „my", obecně „člověk"',cz:'On va au café. = Jdeme do kavárny. / On dit que… = Říká se, že…'}],
+ qui:[{desc:'zájmeno „kdo; který" (podmět vedlejší věty)',cz:'La fille qui parle = dívka, která mluví'}],
+ que:[{desc:'zájmeno/spojka „co; že; kterého"',cz:'Je pense que… = Myslím, že…'}],
+};
+function grammarNotesFR(word){
+ const w=(word||'').toLowerCase().replace(/’/g,"'").replace(/[^a-zà-öø-ÿœ'-]/g,'');
+ if(!w)return[];
+ const out=[];
+ const m=w.match(/^([jdnmtscl]|qu)'(.*)$/);
+ if(m){
+  const e=FR_ELISION[m[1]+"'"];
+  if(e)out.push({kind:'info',form:m[1]+"'",desc:e.desc+' — plný tvar: '+e.full,cz:e.cz});
+  return m[2]?out.concat(grammarNotesFR(m[2])):out;
+ }
+ (FR_GRAM[w]||[]).forEach(n=>out.push({kind:'info',form:w,desc:n.desc,forms:n.forms,cz:n.cz}));
+ (FR_VERB_BY_FORM.get(w)||[]).slice(0,2).forEach(e=>out.push({kind:'frverb',form:w,e}));
+ return out;
 }
 
 function grammarEl(n){
@@ -1583,6 +1763,22 @@ function grammarEl(n){
   head.append(el('strong',null,n.form),document.createTextNode(' — '+r+
    ', stupňuje se nepravidelně'));
   box.append(head,formsLine([n.c.base,n.c.comp,n.c.sup],n.form),el('div','pos-cz',n.c.cz));
+ }else if(n.kind==='info'){
+  const head=el('div');
+  head.append(el('strong',null,n.form),document.createTextNode(' — '+n.desc));
+  box.append(head);
+  if(n.forms)box.append(formsLine(n.forms,n.form));
+  if(n.cz)box.append(el('div','pos-cz',n.cz));
+ }else if(n.kind==='frverb'){
+  const v=n.e.v,head=el('div');
+  head.append(el('strong',null,n.form),document.createTextNode(n.e.part
+   ?' — participe passé (minulé příčestí) slovesa '
+   :' — přítomný čas ('+n.e.pers.join(', ')+') slovesa '));
+  head.append(el('strong',null,v.base));
+  box.append(head,formsLine([
+   'je '+v.pres[0]+', tu '+v.pres[1]+', il '+v.pres[2],
+   'nous '+v.pres[3]+', vous '+v.pres[4]+', ils '+v.pres[5],
+   'participe passé: '+v.part],n.form),el('div','pos-cz',v.cz));
  }else{
   const head=el('div');
   head.append(el('strong',null,n.c.short),document.createTextNode(' — stažený tvar pro '));
@@ -1635,15 +1831,6 @@ const CLOZE_STOP=new Set(('a an the and or but if of to in on at by for with fro
  'own same too can could will would shall should may might must let up down out off over under '+
  'after before while during about because though although until since where whether said says '+
  'one two three now still even ever never always well back away').split(' '));
-const CLOZE_STOP_FR=new Set(('le la les un une des de du au aux et ou mais donc car ne pas plus très bien '+
- 'tout tous toute toutes ce cette ces cet celui celle je tu il elle on nous vous ils elles me te se lui leur '+
- 'mon ma mes ton ta tes son sa ses notre votre leurs est sont était étaient été être suis es sommes êtes '+
- 'ai as a avons avez ont avait avaient avoir eu fait faire fais va vais vas allons allez vont aller '+
- 'peut peux pouvons pouvez peuvent pouvoir veut veux voulons voulez veulent vouloir dit dis dire disent '+
- 'qui que quoi dont où quand comment pourquoi parce comme aussi alors puis encore déjà toujours jamais '+
- 'ici là bas avec sans pour par sur sous dans chez vers entre avant après pendant depuis rien personne '+
- 'quelque chose autre autres même mêmes moi toi soi eux cela ça ceci oui non peut-être beaucoup peu '+
- 'trop assez moins mieux mal vite deux trois quatre cinq six sept huit neuf dix cent mille').split(/\s+/));
 
 function pickCloze(sent,used){
  const lang=curLang();
@@ -1925,7 +2112,7 @@ function solved(byUser){
  }
  // Poznámky k odpovědi; u sloves je mezi nimi i celá trojice tvarů,
  // takže se tu nic dalšího nepřidává (jinak by se řádek tvarů zdvojil).
- const notes=lrn.lang==='en'?grammarNotes(t.answer):[];
+ const notes=lrn.lang==='en'?grammarNotes(t.answer):grammarNotesFR(t.answer);
  if(t.type==='verb'&&!notes.some(n=>n.kind==='verb'&&n.v===t.verb))
   notes.unshift({kind:'verb',v:t.verb,roles:[t.role],form:t.answer});
  notes.forEach(n=>{const g=grammarEl(n);g.style.marginTop='10px';fb.append(g);});
@@ -2009,7 +2196,8 @@ function show(view){
  $('#view-learn').hidden=view!=='learn';
  $('#btn-back').hidden=view!=='reader';
  $('#btn-learn').hidden=view!=='reader';
- $('#btn-reills').hidden=view!=='reader'||!!(state.current&&state.current.builtin);
+ const curBB=state.current&&state.current.builtin&&builtinById(state.current.builtin);
+ $('#btn-reills').hidden=view!=='reader'||!!(curBB&&curBB.ills);
  $('#book-title').textContent=view==='reader'&&state.current?state.current.title:'';
  if(view!=='reader')closePanel();
  if(view==='library')renderLibrary();
