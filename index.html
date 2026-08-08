@@ -260,6 +260,7 @@ h1.pgtitle{font-size:22px;margin:6px 0 0}
   <button id="btn-reills" class="icon" hidden title="Znovu vyhledat ilustrace ke kapitolám">🔄</button>
   <button id="btn-learn" class="icon" hidden title="Procvičit slova z této části knihy">🎓</button>
   <nav>
+    <button id="btn-lang" title="Přepnout jazyk knihovny">🇫🇷 <span class="lbl">Français</span></button>
     <button id="nav-lib" title="Knihovna">📚 <span class="lbl">Knihovna</span></button>
     <button id="nav-words" title="Slovníček">⭐ <span class="lbl">Slovníček</span></button>
     <button id="nav-learn" title="Učení">🎓 <span class="lbl">Učení</span></button>
@@ -273,7 +274,7 @@ h1.pgtitle{font-size:22px;margin:6px 0 0}
     <div class="toolbar">
       <div>
         <h1 class="pgtitle">Moje knihovna</h1>
-        <p class="sub">Nahraj text v angličtině (.txt, .docx, .pdf) a čti ho jako knihu.</p>
+        <p class="sub" id="lib-sub">Nahraj text v angličtině (.txt, .docx, .pdf) a čti ho jako knihu.</p>
       </div>
       <button id="btn-upload" class="primary" style="margin-left:auto">＋ Nahrát text</button>
     </div>
@@ -287,7 +288,7 @@ h1.pgtitle{font-size:22px;margin:6px 0 0}
         <path d="M36 34 C 52 28, 78 30, 90 38 M36 48 C 52 42, 78 44, 90 52 M36 62 C 52 56, 78 58, 90 66 M110 38 C 122 30, 148 28, 164 34 M110 52 C 122 44, 148 42, 164 48 M110 66 C 122 58, 148 56, 164 62" stroke="var(--muted)" stroke-width="2" fill="none" stroke-linecap="round"/>
         <path d="M146 10 l 0 26 6 -7 6 7 0 -26 z" fill="var(--accent)"/>
       </svg>
-      <div><strong>Knihovna je zatím prázdná.</strong><br>Nahraj první anglický text a začni číst.</div>
+      <div><strong>Knihovna je zatím prázdná.</strong><br>Nahraj první text a začni číst.</div>
     </div>
     <div id="drop-hint">Soubor sem můžeš také přetáhnout myší.</div>
     <h2 class="libsec-head" id="builtin-head">Základní knihovna — klasiky zdarma (Project Gutenberg)</h2>
@@ -474,9 +475,9 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.7.7';
+const APP_VERSION='1.8.0';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
-let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,rails:true,shadow:true},
+let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,rails:true,shadow:true,lang:'en'},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
 function saveSettings(){localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}
 function getWords(){return JSON.parse(localStorage.getItem(WORDS_KEY)||'[]');}
@@ -496,8 +497,9 @@ const POS_CZ={noun:'podst. jméno',verb:'sloveso',adjective:'příd. jméno',adv
  article:'člen',numeral:'číslovka',exclamation:'citoslovce',particle:'částice',
  determiner:'determinant',abbreviation:'zkratka',phrase:'fráze'};
 
-async function translateGoogle(text){
- const u='https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=cs&dt=t&dt=bd&q='
+function curLang(){return (state.current&&state.current.lang)||settings.lang||'en';}
+async function translateGoogle(text,sl){
+ const u='https://translate.googleapis.com/translate_a/single?client=gtx&sl='+sl+'&tl=cs&dt=t&dt=bd&q='
    +encodeURIComponent(text);
  const r=await fetch(u);if(!r.ok)throw new Error('http '+r.status);
  const d=await r.json();
@@ -506,20 +508,21 @@ async function translateGoogle(text){
  const alts=(d[1]||[]).map(e=>({pos:e[0],terms:(e[1]||[]).slice(0,6)}));
  return {main,alts,src:'Google'};
 }
-async function translateMyMemory(text){
- const u='https://api.mymemory.translated.net/get?q='+encodeURIComponent(text)+'&langpair=en|cs';
+async function translateMyMemory(text,sl){
+ const u='https://api.mymemory.translated.net/get?q='+encodeURIComponent(text)+'&langpair='+sl+'|cs';
  const r=await fetch(u);if(!r.ok)throw new Error('http '+r.status);
  const d=await r.json();
  const main=d.responseData&&d.responseData.translatedText;
  if(!main)throw new Error('empty');
  return {main:main.trim(),alts:[],src:'MyMemory'};
 }
-async function translate(text){
- const key='t:'+text.toLowerCase();
+async function translate(text,sl){
+ sl=sl||curLang();
+ const key='t:'+(sl==='en'?'':sl+':')+text.toLowerCase();
  if(trCache[key])return trCache[key];
  let res;
- try{res=await translateGoogle(text);}
- catch(e){res=await translateMyMemory(text);}
+ try{res=await translateGoogle(text,sl);}
+ catch(e){res=await translateMyMemory(text,sl);}
  cachePut(key,res);
  return res;
 }
@@ -543,8 +546,9 @@ async function findExampleSentence(word){
  }catch(e){}
  return null;
 }
-function speak(text){
- try{const u=new SpeechSynthesisUtterance(text);u.lang='en-US';u.rate=0.95;
+function speak(text,lang){
+ try{const u=new SpeechSynthesisUtterance(text);
+  u.lang=(lang||curLang())==='fr'?'fr-FR':'en-US';u.rate=0.95;
   speechSynthesis.cancel();speechSynthesis.speak(u);}catch(e){}
 }
 
@@ -593,7 +597,7 @@ async function handleFiles(files){
    const paragraphs=textToParagraphs(raw);
    if(!paragraphs.length)throw new Error('V souboru se nepodařilo najít žádný text.');
    const rec={id:Date.now()+'-'+Math.random().toString(36).slice(2,8),
-    title:f.name.replace(/\.[^.]+$/,''),addedAt:Date.now(),paragraphs,pos:{page:0}};
+    title:f.name.replace(/\.[^.]+$/,''),lang:settings.lang||'en',addedAt:Date.now(),paragraphs,pos:{page:0}};
    await DB.put(rec);state.texts.push(rec);
    autoCover(rec);
    toast('„'+rec.title+'" přidáno do knihovny.');
@@ -707,13 +711,26 @@ const BUILTIN_BOOKS=[
  {id:'sherlock',file:'books/sherlock-holmes.txt',title:'The Adventures of Sherlock Holmes',author:'Arthur Conan Doyle',note:'středně náročné · povídky',ills:true,cover:'books/img/sherlock/illus008a.jpg'},
  {id:'gatsby',file:'books/great-gatsby.txt',title:'The Great Gatsby',author:'F. Scott Fitzgerald',note:'náročnější',mono:'G'},
 ];
+const BUILTIN_BOOKS_FR=[
+ {id:'fr01',file:'books/fr/01-le-nouveau.txt',title:'Le Nouveau du lycée',author:'Les Nuits de Corbeval · Tome 1',note:'velmi jednoduchá francouzština',mono:'1',lang:'fr'},
+ {id:'fr02',file:'books/fr/02-le-frere.txt',title:'Le Frère dangereux',author:'Les Nuits de Corbeval · Tome 2',note:'velmi jednoduchá francouzština',mono:'2',lang:'fr'},
+ {id:'fr03',file:'books/fr/03-la-sorciere.txt',title:'La Sorcière de Corbeval',author:'Les Nuits de Corbeval · Tome 3',note:'velmi jednoduchá francouzština',mono:'3',lang:'fr'},
+ {id:'fr04',file:'books/fr/04-le-bal.txt',title:"Le Bal d'automne",author:'Les Nuits de Corbeval · Tome 4',note:'velmi jednoduchá francouzština',mono:'4',lang:'fr'},
+ {id:'fr05',file:'books/fr/05-la-crypte.txt',title:"La Crypte sous l'église",author:'Les Nuits de Corbeval · Tome 5',note:'velmi jednoduchá francouzština',mono:'5',lang:'fr'},
+ {id:'fr06',file:'books/fr/06-le-chasseur.txt',title:'Le Chasseur de vampires',author:'Les Nuits de Corbeval · Tome 6',note:'velmi jednoduchá francouzština',mono:'6',lang:'fr'},
+ {id:'fr07',file:'books/fr/07-la-bague.txt',title:'La Bague de jour',author:'Les Nuits de Corbeval · Tome 7',note:'velmi jednoduchá francouzština',mono:'7',lang:'fr'},
+ {id:'fr08',file:'books/fr/08-la-nuit-du-loup.txt',title:'La Nuit du loup',author:'Les Nuits de Corbeval · Tome 8',note:'velmi jednoduchá francouzština',mono:'8',lang:'fr'},
+ {id:'fr09',file:'books/fr/09-le-premier-vampire.txt',title:'Le Premier Vampire',author:'Les Nuits de Corbeval · Tome 9',note:'velmi jednoduchá francouzština',mono:'9',lang:'fr'},
+ {id:'fr10',file:'books/fr/10-le-dernier-choix.txt',title:'Le Dernier Choix',author:'Les Nuits de Corbeval · Tome 10',note:'velmi jednoduchá francouzština',mono:'10',lang:'fr'},
+];
+function builtinById(id){return BUILTIN_BOOKS.find(b=>b.id===id)||BUILTIN_BOOKS_FR.find(b=>b.id===id);}
 async function addBuiltin(b){
  try{
   const r=await fetch(b.file);
   if(!r.ok)throw new Error('HTTP '+r.status);
   const paragraphs=textToParagraphs(await r.text());
   const rec={id:Date.now()+'-'+Math.random().toString(36).slice(2,8),
-   builtin:b.id,title:b.title,addedAt:Date.now(),paragraphs,pos:{page:0}};
+   builtin:b.id,lang:b.lang||'en',title:b.title,addedAt:Date.now(),paragraphs,pos:{page:0}};
   await DB.put(rec);state.texts.push(rec);
   toast('„'+b.title+'" přidáno do knihovny.');
   openReader(rec);
@@ -721,7 +738,8 @@ async function addBuiltin(b){
 }
 function renderBuiltin(){
  const cont=$('#builtin-cards');cont.innerHTML='';
- const avail=BUILTIN_BOOKS.filter(b=>!state.texts.some(t=>t.builtin===b.id));
+ const src=settings.lang==='fr'?BUILTIN_BOOKS_FR:BUILTIN_BOOKS;
+ const avail=src.filter(b=>!state.texts.some(t=>t.builtin===b.id));
  $('#builtin-head').hidden=avail.length===0;
  for(const b of avail){
   const card=document.createElement('div');card.className='card';
@@ -778,7 +796,7 @@ function renderLibrary(){
    cb.onclick=e=>{e.stopPropagation();pickCover(t);};
    meta.append(bar,pctEl,cb,del);
   }else meta.append(bar,pctEl,del);
-  const bb=t.builtin&&BUILTIN_BOOKS.find(b=>b.id===t.builtin);
+  const bb=t.builtin&&builtinById(t.builtin);
   if(bb)card.append(makeCover(bb),h,meta);
   else if(t.cover)card.append(makeCover({cover:t.cover}),h,meta);
   else card.append(h,ex,meta);
@@ -789,7 +807,7 @@ function renderLibrary(){
 
 /* ================= stránkování a vykreslení ================= */
 function splitSentences(par){
- const parts=par.split(/(?<=[.!?…]["'”’)\]]?)\s+/);
+ const parts=par.split(/(?<=[.!?…]["'”’»)\]]?)\s+/);
  return parts.filter(s=>s.trim().length>0);
 }
 function paginate(paragraphs){
@@ -807,7 +825,7 @@ function paginate(paragraphs){
 }
 function renderSentenceEl(s){
  const span=document.createElement('span');span.className='s';
- const re=/[A-Za-z][A-Za-z'’-]*/g;let last=0,m;
+ const re=/[A-Za-zÀ-ÖØ-öø-ÿŒœ][A-Za-zÀ-ÖØ-öø-ÿŒœ'’-]*/g;let last=0,m;
  while((m=re.exec(s))){
   if(m.index>last)span.append(s.slice(last,m.index));
   const w=document.createElement('span');w.className='w';w.textContent=m[0];span.append(w);
@@ -902,7 +920,7 @@ function updateRail(){
 const ILL_CACHE={};
 async function loadIllustrations(builtinId){
  if(!builtinId)return null;
- const bb=BUILTIN_BOOKS.find(b=>b.id===builtinId);
+ const bb=builtinById(builtinId);
  if(!bb||!bb.ills)return null;
  if(ILL_CACHE[builtinId]!==undefined)return ILL_CACHE[builtinId];
  try{
@@ -1138,7 +1156,8 @@ function altsTable(alts){
 }
 function findOccurrences(word,exceptSentence){
  if(!state.current)return[];
- const re=new RegExp('\\b'+word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\b','i');
+ const L='A-Za-zÀ-ÖØ-öø-ÿŒœ'; // \b neumí diakritiku (é není \w)
+ const re=new RegExp('(?<!['+L+'])'+word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?!['+L+'])','i');
  const out=[];
  for(const p of state.current.paragraphs){
   for(const s of splitSentences(p)){
@@ -1178,7 +1197,7 @@ async function openWord(word,sentence){
  const body=$('#panel-body');
  body.append(speakBtn(word));
  const sTr=sec('Překlad');body.append(sTr);
- const gn=grammarNotes(word);
+ const gn=curLang()==='en'?grammarNotes(word):[];
  if(gn.length){
   const sG=sec('Gramatika');body.append(sG);
   gn.forEach((n,i)=>{const g=grammarEl(n);if(i)g.style.marginTop='10px';sG.body.append(g);});
@@ -1192,8 +1211,11 @@ async function openWord(word,sentence){
   const trDiv=document.createElement('div');trDiv.className='loading';
   trDiv.textContent='Překládám větu…';sCtx.body.append(trDiv);
  }
- const sDef=sec('Výklad a příklady (anglicky)');body.append(sDef);
- sDef.body.innerHTML='<div class="loading">Hledám ve slovníku…</div>';
+ let sDef=null;
+ if(curLang()==='en'){ // dictionaryapi.dev umí jen angličtinu
+  sDef=sec('Výklad a příklady (anglicky)');body.append(sDef);
+  sDef.body.innerHTML='<div class="loading">Hledám ve slovníku…</div>';
+ }
  const occ=findOccurrences(word,sentence);
  if(occ.length){
   const sOcc=sec('Další výskyty v textu');body.append(sOcc);
@@ -1213,7 +1235,7 @@ async function openWord(word,sentence){
    if(div){div.className='err';div.textContent='Větu se nepodařilo přeložit.';}
   });
  }
- fetchDefinition(word).then(df=>{
+ if(sDef)fetchDefinition(word).then(df=>{
   sDef.body.innerHTML='';
   if(df.phonetic)$('#panel-phon').textContent=df.phonetic;
   if(!df.meanings.length){sDef.body.innerHTML='<div class="loading">Slovo není ve slovníku.</div>';return;}
@@ -1254,7 +1276,7 @@ function renderWords(){
   const td2=document.createElement('td');td2.className='tr';td2.textContent=w.tr||'—';
   const td3=document.createElement('td');td3.style.textAlign='right';td3.style.whiteSpace='nowrap';
   const sp=document.createElement('button');sp.className='icon';sp.textContent='🔊';
-  sp.onclick=e=>{e.stopPropagation();speak(w.w);};
+  sp.onclick=e=>{e.stopPropagation();speak(w.w,w.lang||'en');};
   const del=document.createElement('button');del.className='icon';del.textContent='🗑';
   del.onclick=e=>{e.stopPropagation();setWords(getWords().filter(x=>x.w!==w.w));renderWords();};
   td3.append(sp,del);
@@ -1613,19 +1635,29 @@ const CLOZE_STOP=new Set(('a an the and or but if of to in on at by for with fro
  'own same too can could will would shall should may might must let up down out off over under '+
  'after before while during about because though although until since where whether said says '+
  'one two three now still even ever never always well back away').split(' '));
+const CLOZE_STOP_FR=new Set(('le la les un une des de du au aux et ou mais donc car ne pas plus très bien '+
+ 'tout tous toute toutes ce cette ces cet celui celle je tu il elle on nous vous ils elles me te se lui leur '+
+ 'mon ma mes ton ta tes son sa ses notre votre leurs est sont était étaient été être suis es sommes êtes '+
+ 'ai as a avons avez ont avait avaient avoir eu fait faire fais va vais vas allons allez vont aller '+
+ 'peut peux pouvons pouvez peuvent pouvoir veut veux voulons voulez veulent vouloir dit dis dire disent '+
+ 'qui que quoi dont où quand comment pourquoi parce comme aussi alors puis encore déjà toujours jamais '+
+ 'ici là bas avec sans pour par sur sous dans chez vers entre avant après pendant depuis rien personne '+
+ 'quelque chose autre autres même mêmes moi toi soi eux cela ça ceci oui non peut-être beaucoup peu '+
+ 'trop assez moins mieux mal vite deux trois quatre cinq six sept huit neuf dix cent mille').split(/\s+/));
 
 function pickCloze(sent,used){
- const re=/[A-Za-z][A-Za-z'’-]*/g;let m,best=null;
+ const lang=curLang();
+ const re=/[A-Za-zÀ-ÖØ-öø-ÿŒœ][A-Za-zÀ-ÖØ-öø-ÿŒœ'’-]*/g;let m,best=null;
  const saved=getWords().map(x=>x.w.toLowerCase());
  while((m=re.exec(sent))){
   const raw=m[0],w=raw.toLowerCase();
   if(w.length<4||w.length>12)continue;
-  if(!/^[a-z]+$/.test(w))continue;
-  if(CLOZE_STOP.has(w)||used.has(w))continue;
-  if(m.index>0&&/[A-Z]/.test(raw[0]))continue; // vlastní jméno uprostřed věty
+  if(!/^[a-zà-öø-ÿœ]+$/.test(w))continue;
+  if((lang==='fr'?CLOZE_STOP_FR:CLOZE_STOP).has(w)||used.has(w))continue;
+  if(m.index>0&&/[A-ZÀ-ÖØ-Þ]/.test(raw[0]))continue; // vlastní jméno uprostřed věty
   let score=w.length>=7?2:1;
   if(saved.includes(w))score+=6;
-  if(VERB_BY_FORM.has(w))score+=3;
+  if(lang==='en'&&VERB_BY_FORM.has(w))score+=3;
   if(!best||score>best.score)best={raw,w,start:m.index,end:m.index+raw.length,score};
  }
  return best;
@@ -1654,20 +1686,23 @@ function buildBookLesson(){
   used.add(c.w);
   tasks.push({type:'cloze',key:'w:'+c.w,answer:c.w,sent:s,start:c.start,end:c.end});
  }
- const verbs=[];
- for(const s of pool){
-  const re=/[A-Za-z]+/g;let m;
-  while((m=re.exec(s))){
-   const e=(VERB_BY_FORM.get(m[0].toLowerCase())||[])[0];
-   if(e&&!verbs.some(x=>x.base===e.v.base))verbs.push(e.v);
+ if(curLang()==='en'){ // tabulky nepravidelných sloves jsou jen anglické
+  const verbs=[];
+  for(const s of pool){
+   const re=/[A-Za-z]+/g;let m;
+   while((m=re.exec(s))){
+    const e=(VERB_BY_FORM.get(m[0].toLowerCase())||[])[0];
+    if(e&&!verbs.some(x=>x.base===e.v.base))verbs.push(e.v);
+   }
   }
+  shuffle(verbs).slice(0,2).forEach(v=>{const t=verbTask(v);if(t)tasks.push(t);});
  }
- shuffle(verbs).slice(0,2).forEach(v=>{const t=verbTask(v);if(t)tasks.push(t);});
  return shuffle(tasks);
 }
 function buildWordsLesson(){
  const l=getLearn();
- const words=getWords().filter(w=>/^[a-z]+$/i.test(w.w)&&w.w.length>=3&&w.w.length<=12&&w.tr);
+ const words=getWords().filter(w=>/^[a-zà-öø-ÿœ]+$/i.test(w.w)&&w.w.length>=3&&w.w.length<=12&&w.tr
+  &&(w.lang||'en')===settings.lang);
  words.sort((a,b)=>{
   const ia=l.items['w:'+a.w.toLowerCase()],ib=l.items['w:'+b.w.toLowerCase()];
   return (ia?ia.due:0)-(ib?ib.due:0);
@@ -1688,7 +1723,7 @@ function buildVerbsLesson(){
  return out;
 }
 
-let lrn={tasks:[],i:0,ok:0,slots:[],pool:[],phase:'idle',mistakes:0};
+let lrn={tasks:[],i:0,ok:0,slots:[],pool:[],phase:'idle',mistakes:0,lang:'en'};
 function learnRunning(){return lrn.phase!=='idle'&&lrn.i<lrn.tasks.length;}
 
 function renderLearnHome(){
@@ -1704,22 +1739,24 @@ function renderLearnHome(){
  parts.push(state.current
   ? 'Lekce z knihy bere věty z místa, kde právě čteš („'+state.current.title+'“).'
   : 'Lekce z knihy je dostupná, až otevřeš nějakou knihu ve čtečce.');
- const wc=getWords().filter(w=>w.tr).length;
+ const wc=getWords().filter(w=>w.tr&&(w.lang||'en')===settings.lang).length;
  parts.push(wc?('Ve slovníčku máš '+wc+' slovíček s překladem.')
   :'Slovníček je zatím prázdný — při čtení si slovíčka ukládej tlačítkem ⭐.');
  hint.textContent=parts.join(' ');
  $('#btn-lesson-book').disabled=!state.current;
  $('#btn-lesson-words').disabled=wc===0;
+ $('#btn-lesson-verbs').disabled=settings.lang==='fr';
+ $('#btn-lesson-verbs').title=settings.lang==='fr'?'Nepravidelná slovesa jsou zatím jen pro angličtinu':'';
 }
 function endLesson(){
- lrn={tasks:[],i:0,ok:0,slots:[],pool:[],phase:'idle',mistakes:0};
+ lrn={tasks:[],i:0,ok:0,slots:[],pool:[],phase:'idle',mistakes:0,lang:'en'};
  $('#learn-run').hidden=true;$('#learn-done').hidden=true;
  $('#btn-learn-exit').hidden=true;$('#learn-home').hidden=false;
  renderLearnHome();
 }
-function startLesson(tasks,intro){
+function startLesson(tasks,intro,lang){
  if(!tasks||!tasks.length){toast(intro||'Pro tuhle lekci se nenašel materiál.');return;}
- lrn={tasks,i:0,ok:0,slots:[],pool:[],phase:'input',mistakes:0};
+ lrn={tasks,i:0,ok:0,slots:[],pool:[],phase:'input',mistakes:0,lang:lang||'en'};
  $('#learn-home').hidden=true;$('#learn-done').hidden=true;
  $('#learn-run').hidden=false;$('#btn-learn-exit').hidden=false;
  renderTask();
@@ -1768,7 +1805,11 @@ function clearSlots(){
 }
 function typeLetter(ch){
  if(lrn.phase!=='input')return;
- const i=lrn.pool.findIndex(t=>!t.used&&t.ch===ch);
+ let i=lrn.pool.findIndex(t=>!t.used&&t.ch===ch);
+ if(i<0){ // „e" doplní i „é" — česká klávesnice nemá všechna francouzská písmena
+  const base=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  i=lrn.pool.findIndex(t=>!t.used&&base(t.ch)===base(ch));
+ }
  if(i>=0)placeTile(i);
 }
 function backspace(){
@@ -1805,7 +1846,7 @@ function renderTask(){
   prompt.append(document.createTextNode(' — '+t.verb.cz+'?'));
   sent.append(slotsEl());
  }else{
-  prompt.append(document.createTextNode('Jak se anglicky řekne '));
+  prompt.append(document.createTextNode('Jak se '+(lrn.lang==='fr'?'francouzsky':'anglicky')+' řekne '));
   prompt.append(el('b',null,t.cz));
   prompt.append(document.createTextNode('?'));
   sent.append(slotsEl());
@@ -1852,7 +1893,7 @@ function solved(byUser){
   const s=el('div','pos-cz','V knize: '+t.sent);s.style.marginTop='8px';fb.append(s);
   const tr=el('div','pos-cz','Překládám větu… ');tr.style.marginTop='4px';fb.append(tr);
   const want=lrn.i;
-  translate(t.sent).then(r=>{
+  translate(t.sent,lrn.lang).then(r=>{
    if(lrn.i!==want||lrn.phase!=='done')return;
    tr.textContent='→ '+r.main;
   }).catch(()=>{tr.remove();});
@@ -1860,14 +1901,14 @@ function solved(byUser){
  if(t.type==='cloze'){
   const tr=el('div','pos-cz','Překlad slova… ');tr.style.marginTop='8px';fb.append(tr);
   const want=lrn.i;
-  translate(t.answer).then(r=>{
+  translate(t.answer,lrn.lang).then(r=>{
    if(lrn.i!==want||lrn.phase!=='done')return;
    tr.textContent='Překlad: '+r.main;
   }).catch(()=>{tr.remove();});
  }
  // slovesa a slovíčka bez vlastní věty z knihy — dohledej reálný příklad
  // použití ve slovníku (dictionaryapi.dev), ne u vymyšlené věty
- if(t.type==='verb'||(t.type==='wordtr'&&!t.sent)){
+ if(lrn.lang==='en'&&(t.type==='verb'||(t.type==='wordtr'&&!t.sent))){
   const want=lrn.i;
   const primary=t.answer,fallback=t.type==='verb'?t.verb.base:null;
   (async()=>{
@@ -1876,7 +1917,7 @@ function solved(byUser){
    if(lrn.i!==want||lrn.phase!=='done'||!sentence)return;
    const s=el('div','pos-cz',sentence);s.style.marginTop='8px';s.style.fontStyle='italic';fb.append(s);
    const tr=el('div','pos-cz','Překládám větu… ');tr.style.marginTop='4px';fb.append(tr);
-   translate(sentence).then(r=>{
+   translate(sentence,'en').then(r=>{
     if(lrn.i!==want||lrn.phase!=='done')return;
     tr.textContent='→ '+r.main;
    }).catch(()=>{tr.remove();});
@@ -1884,7 +1925,7 @@ function solved(byUser){
  }
  // Poznámky k odpovědi; u sloves je mezi nimi i celá trojice tvarů,
  // takže se tu nic dalšího nepřidává (jinak by se řádek tvarů zdvojil).
- const notes=grammarNotes(t.answer);
+ const notes=lrn.lang==='en'?grammarNotes(t.answer):[];
  if(t.type==='verb'&&!notes.some(n=>n.kind==='verb'&&n.v===t.verb))
   notes.unshift({kind:'verb',v:t.verb,roles:[t.role],form:t.answer});
  notes.forEach(n=>{const g=grammarEl(n);g.style.marginTop='10px';fb.append(g);});
@@ -1989,15 +2030,15 @@ $('#nav-learn').onclick=()=>show('learn');
 $('#btn-back').onclick=()=>show('library');
 $('#btn-learn').onclick=()=>{
  show('learn');
- startLesson(buildBookLesson(),'Na téhle části knihy se nenašla vhodná slova — zkus to o kus dál.');
+ startLesson(buildBookLesson(),'Na téhle části knihy se nenašla vhodná slova — zkus to o kus dál.',curLang());
 };
 $('#btn-learn-exit').onclick=endLesson;
 $('#btn-lesson-book').onclick=()=>startLesson(buildBookLesson(),
- 'Na téhle části knihy se nenašla vhodná slova — zkus to o kus dál.');
+ 'Na téhle části knihy se nenašla vhodná slova — zkus to o kus dál.',curLang());
 $('#btn-lesson-words').onclick=()=>startLesson(buildWordsLesson(),
- 'Ve slovníčku zatím nejsou slovíčka s překladem.');
+ 'Ve slovníčku zatím nejsou slovíčka s překladem.',settings.lang);
 $('#btn-lesson-verbs').onclick=()=>startLesson(buildVerbsLesson(),
- 'Všechna slovesa máš na dnešek zopakovaná — vrať se zítra.');
+ 'Všechna slovesa máš na dnešek zopakovaná — vrať se zítra.','en');
 $('#lrn-next').onclick=nextTask;
 $('#lrn-reveal').onclick=()=>{if(lrn.phase==='input')solved(false);};
 /* Nápověda = jedno NÁHODNÉ dosud nesprávné písmeno (ne vždy první),
@@ -2015,8 +2056,23 @@ $('#lrn-hint').onclick=()=>{
  if(p>=0){lrn.pool[p].used=true;lrn.slots[i]={ch:t.answer[i],tile:p};renderTiles();syncSlots();}
  if(lrn.slots.every(Boolean))checkAnswer();
 };
-$('#lrn-speak').onclick=()=>{const t=lrn.tasks[lrn.i];if(t)speak(t.answer);};
+$('#lrn-speak').onclick=()=>{const t=lrn.tasks[lrn.i];if(t)speak(t.answer,lrn.lang);};
 $('#btn-reills').onclick=retryContentIllustrations;
+function applyLangUI(){
+ const fr=settings.lang==='fr';
+ const bl=$('#btn-lang');
+ bl.innerHTML=fr?'🇬🇧 <span class="lbl">English</span>':'🇫🇷 <span class="lbl">Français</span>';
+ bl.title=fr?'Přepnout na anglickou knihovnu':'Přepnout na francouzskou knihovnu';
+ $('#lib-sub').textContent='Nahraj text '+(fr?'ve francouzštině':'v angličtině')+' (.txt, .docx, .pdf) a čti ho jako knihu.';
+ $('#builtin-head').textContent=fr
+  ?'Základní knihovna — Les Nuits de Corbeval (zjednodušené povídky)'
+  :'Základní knihovna — klasiky zdarma (Project Gutenberg)';
+}
+$('#btn-lang').onclick=()=>{
+ settings.lang=settings.lang==='fr'?'en':'fr';saveSettings();
+ applyLangUI();renderLibrary();show('library');
+};
+applyLangUI();
 $('.brand').onclick=()=>show('library');
 $('#nav-settings').onclick=()=>{$('#settings').hidden=!$('#settings').hidden;};
 $('#btn-settings-close').onclick=()=>{$('#settings').hidden=true;};
@@ -2039,7 +2095,7 @@ $('#btn-save-word').onclick=()=>{
  let words=getWords();
  const i=words.findIndex(w=>w.w.toLowerCase()===state.panelWord.toLowerCase());
  if(i>=0){words.splice(i,1);toast('Odebráno ze slovníčku.');}
- else{words.unshift({w:state.panelWord,tr:state.panelTr,at:Date.now()});toast('Uloženo do slovníčku ⭐');}
+ else{words.unshift({w:state.panelWord,tr:state.panelTr,lang:curLang(),at:Date.now()});toast('Uloženo do slovníčku ⭐');}
  setWords(words);updateSaveBtn();
 };
 $('#btn-practice').onclick=()=>{
@@ -2100,7 +2156,7 @@ document.addEventListener('keydown',e=>{
  if(!$('#view-learn').hidden&&!$('#learn-run').hidden&&!e.target.matches('input,textarea')){
   if(e.key==='Enter'){e.preventDefault();nextTask();return;}
   if(e.key==='Backspace'){e.preventDefault();backspace();return;}
-  if(/^[a-zA-Z]$/.test(e.key)){e.preventDefault();typeLetter(e.key.toLowerCase());return;}
+  if(/^[a-zA-ZÀ-ÖØ-öø-ÿŒœ]$/.test(e.key)){e.preventDefault();typeLetter(e.key.toLowerCase());return;}
  }
  if(e.key==='Escape'&&!$('#lightbox').hidden){$('#lightbox').hidden=true;return;}
  if(!$('#view-reader').hidden&&!e.target.matches('input,textarea')){
