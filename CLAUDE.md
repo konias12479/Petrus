@@ -313,8 +313,16 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   po 700 ms; MyMemory fallback se necachuje trvale (jeho překladová
   paměť umí vrátit anglický zásah — reálně pozorováno), jen do
   `trSession`; jednorázová očista `trCache.__v2` smazala staré fr
-  záznamy. Výslovnost: `settings.rate` (0.55/0.75/0.95), select
-  přímo u tlačítka „Přehrát výslovnost" v panelu (`speakBtn`).
+  záznamy. I tak se ukázalo, že u méně běžných párů jako fr|cs umí
+  MyMemory (vzácně i gtx) tiše vrátit hladce znějící ANGLICKÝ výsledek
+  (v1.9.1) — `looksEnglish()` v `translate()` proto výstup kontroluje
+  na jistá anglická slova („the/of/and/with/from…", u nichž jinojazyčná
+  shoda prakticky nehrozí) a špatný výsledek zahodí jako chybu místo
+  tichého zobrazení; řetězec pokusů je gtx → (700 ms) gtx → MyMemory →
+  (700 ms) gtx, teprve poslední selhání jde na uživatele jako chyba
+  s tlačítkem „Zkusit znovu". Výslovnost: `settings.rate`
+  (0.55/0.75/0.95), select přímo u tlačítka „Přehrát výslovnost"
+  v panelu (`speakBtn`).
 - **Francouzská základní knihovna:** originální série „Les Nuits de
   Corbeval" (10 dílů, `books/fr/*.txt`, ~45–50k znaků ≈ 40 stránek
   každý) — velmi jednoduchá francouzština A1–A2, atmosférou inspirováno
