@@ -286,6 +286,35 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   pokusu, protože `coverTried`/`contentIllsTried` jinak brání
   opakování navždy. V kontejneru mockovat `commons.wikimedia.org`
   přes `page.route()` — skutečné API zase přes proxy nejde.
+- **Jazykový režim EN/FR (v1.8.0):** `settings.lang` ('en'/'fr'),
+  přepínač `#btn-lang` v hlavičce (🇫🇷/🇬🇧, `applyLangUI()` mění popisky
+  knihovny). Každý záznam textu má `lang` (staré záznamy bez pole = en);
+  `curLang()` = jazyk otevřené knihy, jinak `settings.lang` — řídí
+  `translate(text,sl)` (Google `sl=`, MyMemory `langpair=sl|cs`; cache
+  klíč `t:fr:…`, anglické bez prefixu kvůli zpětné kompatibilitě),
+  `speak(text,lang)` (fr-FR/en-US) a panel: sekce Gramatika a „Výklad
+  a příklady (anglicky)" (dictionaryapi.dev) se ve fr režimu vůbec
+  nevykreslují — jsou EN-only. Slovíčka se ukládají s `lang`; lekce ze
+  slovníčku filtruje podle `settings.lang`, lekce z knihy jede v jazyce
+  knihy (`lrn.lang`), nepravidelná slovesa jsou v fr režimu zakázaná
+  (tabulky jsou anglické). Tokenizace slov všude přes třídu
+  `A-Za-zÀ-ÖØ-öø-ÿŒœ` (JS `\b`/`\w` diakritiku neumí — findOccurrences
+  používá lookbehind/lookahead místo `\b`); `CLOZE_STOP_FR` pro
+  doplňovačky; `typeLetter` normalizuje diakritiku (NFD), takže „e"
+  na české klávesnici doplní i „é/è/ê". Knihovna: `BUILTIN_BOOKS_FR`
+  + `builtinById()` (hledá v obou seznamech — pozor, nahrazuje přímé
+  `BUILTIN_BOOKS.find`).
+- **Francouzská základní knihovna:** originální série „Les Nuits de
+  Corbeval" (10 dílů, `books/fr/*.txt`, ~45–50k znaků ≈ 40 stránek
+  každý) — velmi jednoduchá francouzština A1–A2, atmosférou inspirováno
+  seriálem Vampire Diaries, ale **záměrně s originálními postavami
+  a městem** (Chloé, bratři Lucas a Raphaël Moreau, čarodějka Manon,
+  město Corbeval…) — žádná jména/prvky ze seriálu, repo je veřejné
+  a fanfikce s cizími postavami by byla odvozené dílo. Texty psal
+  Claude (žádná licence třetí strany). Formát: rovné uvozovky místo
+  guillemets « » (čtečka je neumí hezky lámat), 1. řádek název, pak
+  „Les Nuits de Corbeval — Tome N", kapitoly „Chapitre N". Bez
+  ilustrací (`ills` není nastaveno → žádný fetch manifestu).
 - **Učící mód (v1.6.0):** pohled `view-learn` (nav „🎓 Učení" + tlačítko
   `#btn-learn` v hlavičce čtečky, které rovnou spustí lekci z místa, kde
   se čte). Tři zdroje lekcí: `buildBookLesson()` (doplňovačky z vět
