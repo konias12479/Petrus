@@ -477,7 +477,7 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.9.0';
+const APP_VERSION='1.9.1';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
 let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,rails:true,shadow:true,lang:'en',rate:0.95},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
@@ -509,6 +509,13 @@ const POS_CZ={noun:'podst. jméno',verb:'sloveso',adjective:'příd. jméno',adv
  determiner:'determinant',abbreviation:'zkratka',phrase:'fráze'};
 
 function curLang(){return (state.current&&state.current.lang)||settings.lang||'en';}
+/* Čeština „the/of/and…" jako samostatné slovo nikdy nemá — jistá známka,
+   že překladač (nejčastěji MyMemory, jehož strojový engine u méně
+   běžných párů jako fr|cs umí tiše sklouznout do angličtiny) tl=cs
+   nerespektoval. Radši nahlásit chybu než potichu ukázat špatný jazyk. */
+function looksEnglish(s){
+ return /\b(the|of|and|with|from|this|that|will|would|should|have|has|had)\b/i.test(s);
+}
 async function translateGoogle(text,sl){
  const u='https://translate.googleapis.com/translate_a/single?client=gtx&sl='+sl+'&tl=cs&dt=t&dt=bd&q='
    +encodeURIComponent(text);
@@ -516,6 +523,7 @@ async function translateGoogle(text,sl){
  const d=await r.json();
  const main=(d[0]||[]).map(x=>x&&x[0]||'').join('').trim();
  if(!main)throw new Error('empty');
+ if(looksEnglish(main))throw new Error('wrong-lang');
  const alts=(d[1]||[]).map(e=>({pos:e[0],terms:(e[1]||[]).slice(0,6)}));
  return {main,alts,src:'Google'};
 }
@@ -525,6 +533,7 @@ async function translateMyMemory(text,sl){
  const d=await r.json();
  const main=d.responseData&&d.responseData.translatedText;
  if(!main)throw new Error('empty');
+ if(looksEnglish(main))throw new Error('wrong-lang');
  return {main:main.trim(),alts:[],src:'MyMemory'};
 }
 async function translate(text,sl){
@@ -536,10 +545,17 @@ async function translate(text,sl){
  try{res=await translateGoogle(text,sl);}
  catch(e){
   // gtx umí při rychlém klikání vracet 429 — krátká pauza a druhý pokus,
-  // než se sáhne po MyMemory (jehož překladová paměť umí vrátit špatný jazyk)
+  // než se sáhne po MyMemory (jehož strojový engine u méně běžných párů
+  // jako fr|cs umí tiše sklouznout do angličtiny — looksEnglish() to chytá)
   await new Promise(r=>setTimeout(r,700));
   try{res=await translateGoogle(text,sl);}
-  catch(e2){res=await translateMyMemory(text,sl);}
+  catch(e2){
+   try{res=await translateMyMemory(text,sl);}
+   catch(e3){
+    await new Promise(r=>setTimeout(r,700));
+    res=await translateGoogle(text,sl); // poslední pokus; případná chyba jde na volajícího
+   }
+  }
  }
  if(res.src==='Google')cachePut(key,res);
  else trSession[key]=res; // MyMemory necachovat trvale
