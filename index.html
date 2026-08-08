@@ -168,6 +168,8 @@ figure.ill figcaption{font-size:12.5px;color:#a3855c;font-style:italic;margin-to
 .defs li{margin-bottom:6px}
 .defs .ex{display:block;color:var(--muted);font-style:italic}
 .ctx-sent{font-size:calc(19px * var(--read-scale,1));background:var(--hl);border-radius:8px;padding:8px 10px;margin-bottom:6px}
+.speak-line{display:inline-flex;align-items:center;gap:6px;font-size:14px;padding:6px 12px;margin:0 0 12px}
+.ctx-sent .icon{float:right;padding:0 0 0 8px;font-size:16px}
 .ctx-tr{font-size:calc(19px * var(--read-scale,1))}
 .occ{font-size:calc(19px * var(--read-scale,1));color:var(--muted);margin:4px 0;padding-left:10px;border-left:3px solid var(--border)}
 .pos-cz{color:var(--muted)}
@@ -472,7 +474,7 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.7.6';
+const APP_VERSION='1.7.7';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
 let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,rails:true,shadow:true},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
@@ -1099,8 +1101,15 @@ function sec(label){
  const body=document.createElement('div');
  d.append(h,body);d.body=body;return d;
 }
+function speakBtn(text,label){
+ const b=document.createElement('button');b.className='speak-line';
+ b.textContent='🔊 '+(label||'Přehrát výslovnost');
+ b.onclick=()=>speak(text);
+ return b;
+}
 function showPanel(title){
  $('#panel-title').textContent=title;
+ state.panelSpeak=null;
  $('#panel-phon').textContent='';
  $('#panel-body').innerHTML='';
  $('#panel').hidden=false;
@@ -1165,7 +1174,9 @@ async function fillTranslation(secEl,text,big){
 async function openWord(word,sentence){
  state.panelWord=word;state.panelTr='';
  showPanel(word);
+ state.panelSpeak=word;
  const body=$('#panel-body');
+ body.append(speakBtn(word));
  const sTr=sec('Překlad');body.append(sTr);
  const gn=grammarNotes(word);
  if(gn.length){
@@ -1175,6 +1186,8 @@ async function openWord(word,sentence){
  let sCtx=null;
  if(sentence){sCtx=sec('V této větě');body.append(sCtx);
   const cs=document.createElement('div');cs.className='ctx-sent';cs.textContent=sentence;
+  const sb=document.createElement('button');sb.className='icon';sb.textContent='🔊';
+  sb.title='Přehrát celou větu';sb.onclick=()=>speak(sentence);cs.prepend(sb);
   sCtx.body.append(cs);
   const trDiv=document.createElement('div');trDiv.className='loading';
   trDiv.textContent='Překládám větu…';sCtx.body.append(trDiv);
@@ -1220,7 +1233,9 @@ async function openWord(word,sentence){
 async function openSelection(text){
  state.panelWord=text.length<=40?text:null;state.panelTr='';
  showPanel(text.length>60?text.slice(0,60)+'…':text);
+ state.panelSpeak=text;
  const body=$('#panel-body');
+ body.append(speakBtn(text));
  const orig=sec('Vybraný text');body.append(orig);
  const cs=document.createElement('div');cs.className='ctx-sent';cs.textContent=text;orig.body.append(cs);
  const sTr=sec('Překlad');body.append(sTr);
@@ -2018,7 +2033,7 @@ function gotoPageInput(){
 }
 $('#pg-goto-btn').onclick=gotoPageInput;
 $('#pg-goto-input').addEventListener('keydown',e=>{if(e.key==='Enter')gotoPageInput();});
-$('#btn-speak').onclick=()=>{const t=$('#panel-title').textContent;if(t)speak(t);};
+$('#btn-speak').onclick=()=>{const t=state.panelSpeak||$('#panel-title').textContent;if(t)speak(t);};
 $('#btn-save-word').onclick=()=>{
  if(!state.panelWord)return;
  let words=getWords();
