@@ -303,7 +303,18 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   doplňovačky; `typeLetter` normalizuje diakritiku (NFD), takže „e"
   na české klávesnici doplní i „é/è/ê". Knihovna: `BUILTIN_BOOKS_FR`
   + `builtinById()` (hledá v obou seznamech — pozor, nahrazuje přímé
-  `BUILTIN_BOOKS.find`).
+  `BUILTIN_BOOKS.find`); „Moje knihovna" ukazuje jen texty aktuálního
+  jazyka (v1.9.0). Francouzská gramatika: ruční tabulky `FR_VERBS`
+  (23 nepravidelných sloves, présent + participe), `FR_GRAM` (členy,
+  stažené tvary du/au, ukazovací/přivlastňovací určení, zápor ne…pas,
+  on/qui/que) a `FR_ELISION` (l'/j'/d'…); `grammarNotesFR()` umí
+  rozložit elizi („j'ai" → elize + tvar avoir). Překlady (v1.9.0):
+  gtx při rychlém klikání vrací 429 → translate() dělá druhý pokus
+  po 700 ms; MyMemory fallback se necachuje trvale (jeho překladová
+  paměť umí vrátit anglický zásah — reálně pozorováno), jen do
+  `trSession`; jednorázová očista `trCache.__v2` smazala staré fr
+  záznamy. Výslovnost: `settings.rate` (0.55/0.75/0.95), select
+  přímo u tlačítka „Přehrát výslovnost" v panelu (`speakBtn`).
 - **Francouzská základní knihovna:** originální série „Les Nuits de
   Corbeval" (10 dílů, `books/fr/*.txt`, ~45–50k znaků ≈ 40 stránek
   každý) — velmi jednoduchá francouzština A1–A2, atmosférou inspirováno
@@ -313,8 +324,16 @@ pokračuji."* — případně s oranžovým/červeným hlášením místo „kon
   a fanfikce s cizími postavami by byla odvozené dílo. Texty psal
   Claude (žádná licence třetí strany). Formát: rovné uvozovky místo
   guillemets « » (čtečka je neumí hezky lámat), 1. řádek název, pak
-  „Les Nuits de Corbeval — Tome N", kapitoly „Chapitre N". Bez
-  ilustrací (`ills` není nastaveno → žádný fetch manifestu).
+  „Les Nuits de Corbeval — Tome N", kapitoly „Chapitre N" (isHeading
+  je zná od v1.9.0 → stínohra na začátcích kapitol funguje). Od
+  v1.9.0 dostávají vestavěné knihy BEZ vlastního manifestu ilustrací
+  (povídky, Gatsby) obsahové ilustrace z Wikimedia Commons stejně
+  jako nahrané knihy; `chapterQueries(text,lang)` vrací víc
+  kandidátních dotazů (zkouší se, dokud Commons něco nevrátí) a pro
+  fr přeskakuje vlastní jména (vymyšlená → Commons je nezná) rovnou
+  na frekvenční obsahová slova (forêt, église, loup…, stoplist
+  `STOPWORDS_FR`). Tlačítko 🔄 je viditelné u všech knih bez
+  manifestu, i vestavěných.
 - **Učící mód (v1.6.0):** pohled `view-learn` (nav „🎓 Učení" + tlačítko
   `#btn-learn` v hlavičce čtečky, které rovnou spustí lekci z místa, kde
   se čte). Tři zdroje lekcí: `buildBookLesson()` (doplňovačky z vět
