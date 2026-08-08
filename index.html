@@ -173,7 +173,8 @@ figure.ill figcaption{font-size:12.5px;color:#a3855c;font-style:italic;margin-to
 .speak-rate{font:inherit;font-size:13px;padding:6px 8px;border-radius:10px;border:1px solid var(--border);background:var(--page);color:var(--ink);cursor:pointer}
 .ctx-sent .icon{float:right;padding:0 0 0 8px;font-size:16px}
 .ctx-tr{font-size:calc(19px * var(--read-scale,1))}
-.occ{font-size:calc(19px * var(--read-scale,1));color:var(--muted);margin:4px 0;padding-left:10px;border-left:3px solid var(--border)}
+.occ{font-size:calc(19px * var(--read-scale,1));color:var(--muted);margin:4px 0 2px;padding-left:10px;border-left:3px solid var(--border)}
+.occ-tr{font-size:14px;color:var(--muted);margin:0 0 10px 13px;font-style:italic}
 .pos-cz{color:var(--muted)}
 .panel-note{font-size:11px;color:var(--muted);margin-top:18px}
 
@@ -477,7 +478,7 @@ const DB={db:null,
  del(id){return new Promise(r=>{const q=DB.store('readwrite').delete(id);q.onsuccess=()=>r();});}
 };
 
-const APP_VERSION='1.9.1';
+const APP_VERSION='1.9.2';
 const SETTINGS_KEY='petrus-settings', WORDS_KEY='petrus-words', CACHE_KEY='petrus-tr-cache';
 let settings=Object.assign({theme:'light',font:"Georgia,'Times New Roman',serif",size:19,lh:1.7,bold:false,width:900,length:1200,ills:true,rails:true,shadow:true,lang:'en',rate:0.95},
   JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}'));
@@ -1312,9 +1313,14 @@ async function openWord(word,sentence){
   sDef.body.innerHTML='<div class="loading">Hledám ve slovníku…</div>';
  }
  const occ=findOccurrences(word,sentence);
+ let sOcc=null;
  if(occ.length){
-  const sOcc=sec('Další výskyty v textu');body.append(sOcc);
-  occ.forEach(s=>{const d=document.createElement('div');d.className='occ';d.textContent=s;sOcc.body.append(d);});
+  sOcc=sec('Další výskyty v textu');body.append(sOcc);
+  occ.forEach(s=>{
+   const d=document.createElement('div');d.className='occ';d.textContent=s;sOcc.body.append(d);
+   const tr=document.createElement('div');tr.className='occ-tr loading';tr.textContent='Překládám…';
+   sOcc.body.append(tr);
+  });
  }
  const note=document.createElement('div');note.className='panel-note';
  note.textContent='Překlady: Google Translate / MyMemory · výklad: dictionaryapi.dev (vyžaduje internet)';
@@ -1328,6 +1334,13 @@ async function openWord(word,sentence){
   }).catch(()=>{
    const div=sCtx.body.querySelector('.loading');
    if(div){div.className='err';div.textContent='Větu se nepodařilo přeložit.';}
+  });
+ }
+ if(sOcc){
+  sOcc.body.querySelectorAll('.occ-tr').forEach((div,i)=>{
+   translate(occ[i]).then(tr=>{
+    div.className='occ-tr';div.textContent='→ '+tr.main;
+   }).catch(()=>{div.className='occ-tr err';div.textContent='Nepodařilo se přeložit.';});
   });
  }
  if(sDef)fetchDefinition(word).then(df=>{
